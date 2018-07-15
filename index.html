@@ -1,3 +1,12 @@
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
 <!doctype html>
 <html>
   <head>
@@ -17,6 +26,7 @@
     </style>
   </head>
   <body>
+
    <ul id="users">Lobby<p id = "updates"></p></ul>
     <ul id="messages"></ul>
     <form action="">
@@ -43,7 +53,7 @@
          });
 
          socket.on('chat message', function(msg){
-           $('#messages').append($('<li>').text(msg));
+           $('#messages').prepend($('<li>').text(msg));
            window.scrollTo(0, document.body.scrollHeight);
          });
 
@@ -55,3 +65,4 @@
 
   </body>
 </html>
+
