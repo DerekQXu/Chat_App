@@ -10,7 +10,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>WIP chatroom</title>
     <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font: 13px Helvetica, Arial; }
@@ -26,7 +26,7 @@ form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 
     </style>
   </head>
   <body>
-    <ul id="users">Lobby
+    <ul id="users">0 actual users currently online.
       <p id = "updates"></p></ul>
     <ul id="messages"></ul>
 
@@ -37,9 +37,9 @@ form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
+
 $(function () {
-  var socket = io('/my-namespace');
-  var len = 0;
+  var socket = io('/');
 
   $('form').submit(function(){
     socket.emit('chat message', $('#m').val());
@@ -49,14 +49,8 @@ $(function () {
 
   $('form').keyup(function(){
     socket.emit('update', $('#m').val());
-    // update the contents of the form everytime a key is released           return false;
+    return false;
 
-  });
-
-  socket.on('newuser', function(username){
-    var randname = 'User' + Math.floor(Math.random() * 101);
-    socket.randname = randname;
-    socket.emit(socket.randname + ' has joined the room.');
   });
 
   socket.on('server message', function(msg){
