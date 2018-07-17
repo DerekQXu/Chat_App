@@ -11,7 +11,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 require('./app/routes')(app, {});
 
-var nsp = io.of('/my-namespace')
+var nsp = io('/')
 var name2id = new Map();
 var id2name = new Map();
 
@@ -19,7 +19,7 @@ nsp.on('connection', function(socket){
   console.log('someone connected');
 });
 
-app.get('/', function(req, res){
+app.get('/*', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
@@ -43,11 +43,12 @@ nsp.on('connection', function(socket){
   socket.on('chat message', function(msg){
     name = id2name.get(socket.id);
     console.log(name + ': ' + msg);
-
     nsp.emit('chat message', name + ": " + msg);
+    
     if (msg.substring(0,6) == "\\name="){
-      new_name = msg.substring(6,msg.length);
-
+      maxnamelength = 6+14;
+      new_name = msg.substring(6,Math.min(maxnamelength, msg.length));
+      
       if (name2id.get(socket.id) == undefined && new_name.indexOf(":") == -1){
         nsp.emit('server message', name + ' has changed name into ' + new_name);
         name2id.delete(socket.id)
@@ -65,9 +66,16 @@ nsp.on('connection', function(socket){
     nsp.emit('update', name + ": " + msg);
   });
 
+  socket.on('roomdeclare', function(room){
+	 socket.join(room);
+	 console.log(name + 'has joined the room from: ' + room);
+	 nsp.emit('server message', name + 'has joined the room from: ' + room);
+  });
+  
+  
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+http.listen(port, function(){
+  console.log('listening on *:'+port);
 });
 
