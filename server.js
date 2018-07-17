@@ -11,7 +11,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 require('./app/routes')(app, {});
 
-var nsp = io.of('/my-namespace')
+var nsp = io('/')
 var name2id = new Map();
 var id2name = new Map();
 
