@@ -16,48 +16,59 @@
 <link rel="stylesheet" type="text/css" href="https://github.com/DerekQXu/Chat_App/blob/master/style.css">
 </head>
 <body>
-  <form action="">
-    <input id="m" autocomplete="off" /><button>Send</button>
+  <form action="create_room" method="post">
+    <input type="text" name="room_name" autocomplete="off" />
+    <input type="submit" value="Create"/>
   </form>
+
+  <form action="" id="send_message">
+    <input id="m" autocomplete="off" />
+    <button>Send</button>
+  </form>
+
   <ul id="users">
     Users in room: To be implemented</ul>
 	<ul id="messages"> </ul>
-
 
 
 <script>
 $(function () {
   var socket = io('/');
   var routepath = window.location.pathname;
-  
+
   socket.emit('variabledump', routepath);
-  
-  $('form').submit(function(){
+
+  $('#send_message').submit(function(){
     socket.emit('message confirm', $('#m').val());
     $('#m').val('');
     return false;
   });
-  
+
+  $('#m').keyup(function(){
+    socket.emit('update', $('#m').val());
+    return false;
+  });
+
+
   socket.on('server message', function(msg){
     $('#messages').prepend($('<li>').css("color","blue").text(msg));
+    $('#messages').prepend($('<li>'));
   });
 
   socket.on('chat message', function(msg){
     $('#messages').prepend($('<li>').text(msg));
   });
 
-  $('form').keyup(function(){
-    socket.emit('update', $('#m').val());
-    return false;
-  });
-  
   socket.on('update', function(msg){
-    $('#messages').append($('p').text(msg));
+    $('#messages li:first-child').text(msg);
+    //$('#messages').prepend($('<li>').text(msg));
+    //$('#messages').last.append($('p').text(msg));
+    //$('#messages li:last-child').last(('#messages').last()+text(msg));
   });
 
 });
-</script>  
-  
-  
+</script>
+
+
 </body>
 </html>
