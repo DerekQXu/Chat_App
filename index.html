@@ -1,74 +1,163 @@
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-
-<!-- jQuery library -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
-<!-- Latest compiled JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
 <!doctype html>
-<html>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+
+<style>
+<!-- I'll figure out a seperate CSS file some other day. Forget working with express. -->
+header('Content-type: text/css');
+*{ margin: 0; padding: 0; box-sizing: border-box; }
+body { font: 12px Helvetica, Arial; }
+form { background: #000; padding: 1px; width: 100%; }
+form input { border: 0; padding: 4px; width: 94%;}
+form button { width: 5%;}
+#messages { list-style-type: none; color: #2B2B2B; margin: 0; padding: 4px; align=left; word-wrap: break-word;}
+/* #messages li:nth-child(odd) { background: #eee; } */
+#users { list-style-type: none; margin: 0; padding: 4px; display:inline; align=left;}
+#users li:nth-child(odd) { background: #eee; }  
+</style>
+
+
+<html>
 <head>
 <title>WIP chatroom</title>
-<link rel="stylesheet" type="text/css" href="https://github.com/DerekQXu/Chat_App/blob/master/style.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!-- <link rel="stylesheet" href="style.css" type="text/css"> -->
 </head>
 <body>
-  <form action="create_room" method="post">
-    <input type="text" name="room_name" autocomplete="off" />
-    <input type="submit" value="Create"/>
-  </form>
+ 
 
   <form action="" id="send_message">
     <input id="m" autocomplete="off" />
     <button>Send</button>
   </form>
-
-  <ul id="users">
-    Users in room: To be implemented</ul>
-	<ul id="messages"> </ul>
+  
+  <ul id="users">Users in room: </ul>
+  <ul id="messages"> </ul>
 
 
 <script>
+
 $(function () {
+
+
+  function enter_detector(e) {
+    form = document.getElementById("m");
+    if(e.which==13||e.keyCode==13){
+      switch (true){
+        case document.activeElement == form:
+          form.blur();
+          break;
+        case document.activeElement == document.body:
+          form.focus()
+          break;
+        default:
+          break;
+        }
+    }
+  }
+  
+  // Deselect the form when enter is pressed.
+  document.body
+    .addEventListener('keyup',enter_detector,false);
+  
+  document.getElementById("m")
+    .addEventListener('keyup',enter_detector,false);
+  
   var socket = io('/');
   var routepath = window.location.pathname;
-
-  socket.emit('variabledump', routepath);
-
+  is_open = 0;
+  live_type = 1; // I want a button to turn on / off live text.
+  
   $('#send_message').submit(function(){
-    socket.emit('message confirm', $('#m').val());
-    $('#m').val('');
+    if (is_open == 1){
+      if ($('#m').val() !== ""){
+        socket.emit('update message', $('#m').val()); 
+        socket.emit('publish message');
+        socket.emit('message eval', $('#m').val());
+      }
+      $('#m').val(''); // Clears the form.
+      socket.emit('close message');
+      is_open = 0;
+    }
     return false;
   });
 
   $('#m').keyup(function(){
-    socket.emit('update', $('#m').val());
+    if (is_open == 1 && live_type == 1){
+      socket.emit('update message', $('#m').val()); 
+    }
+    else if($('#m').val() !== ""){
+      socket.emit('open the message stop having it be closed');
+      socket.emit('update message', $('#m').val()); 
+      is_open = 1;
+    }
     return false;
   });
 
-
   socket.on('server message', function(msg){
     $('#messages').prepend($('<li>').css("color","blue").text(msg));
-    $('#messages').prepend($('<li>'));
   });
 
   socket.on('chat message', function(msg){
     $('#messages').prepend($('<li>').text(msg));
   });
-
-  socket.on('update', function(msg){
-    $('#messages li:first-child').text(msg);
-    //$('#messages').prepend($('<li>').text(msg));
-    //$('#messages').last.append($('p').text(msg));
-    //$('#messages li:last-child').last(('#messages').last()+text(msg));
+  
+  socket.on('usercount', function(namelist){
+  // Recieves an array of names from server and updates the "Users in room" line
+      var htmlusers = document.getElementById("users");
+      htmlusers.innerHTML = 'Users in room: ';
+      
+      for (i=0; i<namelist.length; i++) {
+        textnode = document.createTextNode(namelist[i] + " ");
+        htmlusers.appendChild(textnode);
+      }
   });
-
+  
+  socket.on('new message' ,function(name){
+  // Creates a generic message, taking in name. Should also publish message.
+    if(document.getElementById("messages") !== null){     
+      placement = document.getElementById("messages");
+      
+      var newMess = document.createElement("li");
+        newMess.id = name;
+        newContent = document.createTextNode(name + ": ");
+        newMess.appendChild(newContent);
+      
+      placement.insertBefore(newMess, placement.children[0]);
+    }
+  });
+  
+  socket.on('update message', function(msg, name){
+    if(document.getElementById(name) !== null){
+      var editmess = document.getElementById(name);
+      editmess.textContent = name + ": " + msg;
+    }
+  });
+  
+  socket.on('publish message', function(name){
+    var newPub = document.createElement("li");
+    var clonedmessage = document.getElementById(name);
+    newPub.textContent = clonedmessage.textContent;
+    
+    messages = document.getElementById("messages");
+    messages.appendChild(newPub);
+    
+    messages.insertBefore(newPub, clonedmessage);
+    
+  });
+  
+  socket.on('close message' ,function(name){
+    if (document.getElementById(name) !== null){
+      document.getElementById(name).remove();
+    }
+  });
+    
+   
 });
+
 </script>
-
-
 </body>
 </html>
