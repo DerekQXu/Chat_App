@@ -1,9 +1,57 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font: 12px Helvetica, Arial; }
-form { background: #000; padding: 1px; width: 100%; }
-form input { border: 0; padding: 4px; width: 94%; margin-right: .5%; }
-form button { width: 5%;}
-#messages { list-style-type: none; margin: 0; padding: 0; align=left; word-wrap: break-word;}
-#messages li:nth-child(odd) { background: #eee; }
-#users { list-style-type: none; margin: 0; padding: 0; display:inline; align=left;}
-#users li:nth-child(odd) { background: #eee; }  
+<style>
+    <!-- I'll figure out a seperate CSS file some other day. Forget working with express. -->
+ header('Content-type: text/css');
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font: 14px Helvetica, Arial;
+    }
+    
+    form {
+        background: #000;
+        padding: 1px;
+        width: 100%;
+    }
+    
+    form input {
+        border: 0;
+        padding: 4px;
+        width: 85%;
+    }
+    
+    form button {
+        width: 5%;
+    }
+    
+    #currenttype {
+        list-style-type: none;
+        margin: 0;
+        padding-left: 4px;
+        align=left;
+    }
+    
+    #messages {
+        list-style-type: none;
+        color: #2B2B2B;
+        margin: 0;
+        padding-left: 4px;
+        align=left;
+        word-wrap: break-word;
+    }
+    
+    #users {
+        list-style-type: none;
+        margin: 0;
+        padding: 4px;
+        display: inline;
+        align=left;
+    }
+    
+    #users li:nth-child(odd) {
+        background: #eee;
+    }
+</style>
