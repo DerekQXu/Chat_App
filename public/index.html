@@ -44,12 +44,12 @@
 
 <script>
 
+var roompath = '' + window.location.pathname;
+
 $(function() {
 
-var roompath = window.location.pathname;
-var socket = io('/',{transports: ['websocket'], upgrade: false});
+var socket = io({transports: ['websocket'], upgrade: false});
 socket.emit('room declare', roompath);
-
 
 var is_open = 0;
 var live_type = 1;
