@@ -39,15 +39,6 @@ http.listen(port, function() {
     console.log('listening on *:' + port);
 });
 
-
-
-// let us move to new html pages :)
-app.post('/create_room', function(req, res) {
-    var room_name = req.body.room_name;
-    console.log('joining room: ' + room_name)
-        //res.sendFile(__dirname + '/room.html')
-})
-
 function userclear(name) {
     userlist = userlist.filter(function(item) {
         return item !== name
@@ -57,7 +48,14 @@ function userclear(name) {
 io.on('connection', function(socket) {
 
     var name;
-    var socketroom;
+    var socketroom = "";
+    
+    socket.on('room declare', function(room) {
+        socketroom = room;
+        socket.join(room);
+        console.log(name + 'has joined the room from: ' + room);
+        io.in(socketroom).emit('server message', name + ' has joined the room.');
+    });
     
     do {
         name = adjectives[Math.floor(Math.random() * adjectives.length)] +
@@ -65,36 +63,29 @@ io.on('connection', function(socket) {
     } while (name2id.get(name) != undefined)
     name2id.set(name, socket.id);
     id2name.set(socket.id, name);
-    io.emit('server message', name + ' has joined the room!');
-    console.log('server message', name + ' has joined the room!');
 
     // add name to the userlist, used in the "X in the room"
     userlist.push(name);
     io.emit('usercount', userlist);
 
-    //TODO
-    socket.on('connection', function(socket) {
-        socket.join('');
-    })
-
     socket.on('disconnect', function() {
         console.log('user disconnected');
-        io.emit('close message', name);
+        io.in(socketroom).emit('close message', name);
 
         name2id.delete(name);
         id2name.delete(socket.id);
-        io.emit('server message', name + ' has left the room!');
+        io.in(socketroom).emit('server message', name + ' has left the room!');
 
         // remove name from the userlist.
         userclear(name);
 
-        io.emit('usercount', userlist);
+        io.in(socketroom).emit('usercount', userlist);
 
     });
 
     // When you don't have to check for commands, and want to preset names.
     socket.on('nocheck confirm', function(msg, name) {
-        io.emit('chat message', name + ": " + msg)
+        io.in(socketroom).emit('chat message', name + ": " + msg)
     });
 
     socket.on('message eval', function(msg, toggle=1) {
@@ -107,10 +98,10 @@ io.on('connection', function(socket) {
             default:
                 if (msg !== ""){
                   if (toggle == 0){
-                    io.emit('chat message', name + ": " + msg)
+                    io.in(socketroom).emit('chat message', name + ": " + msg)
                   }
                   else{
-                    io.emit('publish message', name);                    
+                    io.in(socketroom).emit('publish message', name);                    
                   }
                 }
                 break;
@@ -126,51 +117,46 @@ io.on('connection', function(socket) {
                   } while (name2id.get(new_name) != undefined)
                 }
                 
-                io.emit('server message', name + ' has changed name into ' + new_name);
+                io.in(socketroom).emit('server message', name + ' has changed name into ' + new_name);
                 name2id.delete(socket.id)
                 name2id.set(new_name, socket.id);
                 id2name.set(socket.id, new_name);
                 userclear(name);
                 userlist.push(new_name)
-                io.emit('close message', name);
+                io.in(socketroom).emit('close message', name);
 
                 } else {
-                  io.emit('server message', 'The name, ' + new_name + ', is currently being used.')
+                  io.in(socketroom).emit('server message', 'The name, ' + new_name + ', is currently being used.')
                 }
-                io.emit('usercount', userlist);
+                io.in(socketroom).emit('usercount', userlist);
                 break;
         }
     });
     
     socket.on('update', function(msg) {
         name = id2name.get(socket.id);
-        io.emit('update', name + ": " + msg);
+        io.in(socketroom).emit('update', name + ": " + msg);
     });
 
     socket.on('update message', function(msg) {
         name = id2name.get(socket.id);
-        io.emit('update message', msg, name);
+        io.in(socketroom).emit('update message', msg, name);
     });
 
     socket.on('open the message stop having it be closed', function() {
         name = id2name.get(socket.id);
-        io.emit('new message', name);
+        io.in(socketroom).emit('new message', name);
     });
 
     socket.on('close message', function() {
         name = id2name.get(socket.id);
-        io.emit('close message', name);
+        io.in(socketroom).emit('close message', name);
     });
     
     socket.on('is typing', function() {
         name = id2name.get(socket.id);
-        io.emit('is typing', name);
+        io.in(socketroom).emit('is typing', name);
     });
     
-    socket.on('roomdeclare', function(room) {
-        socketroom = room;
-        socket.join(room);
-        console.log(name + 'has joined the room from: ' + room);
-        io.emit('server message', name + 'has joined the room from: ' + room);
-    });
+    
 });
