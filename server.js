@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 
+// mongodb part
 const MongoClient = require('mongodb').MongoClient;
 const mongoose = require('mongoose');
 user_name=encodeURIComponent('realsyncchat');
@@ -14,6 +15,11 @@ MongoClient.connect(uri_old, { useNewUrlParser: true }, err => {
         console.log('Connected to MongoDb')
     }
 });
+var chatSchema = mongoose.Schema({
+  message: String,
+  created: {type: Date, default: Date.now}
+});
+var Chat = mongoose.model('Message', chatSchema);
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({
@@ -142,6 +148,17 @@ io.on('connection', function(socket) {
         }
         io.in(socketroom).emit('usercount', userlist);
         break;
+
+      // mongodb part
+      case msg.substring(0, 5) == "/save":
+        var newMsg = new Chat({message : '' + msg});
+        console.log('saving newMsg: ' + newMsg)
+        newMsg.save(function(err){
+          console.log('saved, err = ' + err);
+          if(err) throw err;
+          console.log('echoeing back data =' + msg);
+          io.sockets.emit('new message', msg);
+        });
     }
   });
 
@@ -169,6 +186,4 @@ io.on('connection', function(socket) {
     name = id2name.get(socket.id);
     io.in(socketroom).emit('is typing', name);
   });
-
-
 });
