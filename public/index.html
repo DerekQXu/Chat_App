@@ -51,11 +51,24 @@ $(function() {
 var socket = io({transports: ['websocket'], upgrade: false});
 socket.emit('room declare', roompath);
 
+var update_count = 0;
 var is_open = 0;
 var live_type = 1;
 
 var sendform = document.getElementById("m");
 var livetoggle = document.getElementById("typetoggle")
+var title = document.title;
+
+function changeTitle(){
+  update_count++;
+  var newTitle = '(' + update_count +') ' + title;
+  document.title = newTitle;
+}
+
+function newUpdate() {
+    update = setInterval(changeTitle, 2000);
+}
+document.onload = newUpdate;
 
 livetoggle.onclick = function(){
   sendform.value = "";
@@ -102,24 +115,31 @@ function form_focus(e){
 }
 // Opens a live-message if the form is focused, closes it if it's unfocused and empty.
 
+document.addEventListener( 'visibilitychange' , function() {
+    if (!document.hidden) {
+        document.title = title;
+        update_count = 0; 
+    }
+}, false );
+// Resets the title and notification count when refocused.
+
 document.body.addEventListener('keyup', enter_detect, false);
 sendform.addEventListener('keyup', enter_detect, false);
 sendform.addEventListener("focus", form_focus, true);
 sendform.addEventListener("blur", form_focus, true);
-// Adding event listeners to Enter, focus of form.
+// Adding event listeners to enter-key and focus status.
     
 $('#send_message').submit(function() {
   if (live_type == 1){
     socket.emit('update message', sendform.value);
     socket.emit('message eval', sendform.value);    
-    socket.emit('close message');
     is_open = 0;    
   }
   else{
     socket.emit('message eval', sendform.value, 0);
-    socket.emit('close message');
     is_open = 0;
   }
+  socket.emit('close message');
   sendform.value = ''; // Clears form.
   return false;
 });
@@ -137,6 +157,7 @@ socket.on('server message', function(msg) {
 
 socket.on('chat message', function(msg) {
     $('#messages').prepend($('<li>').text(msg));
+    if (document.hidden){changeTitle();}
 });
 
 socket.on('usercount', function(namelist) {
@@ -195,6 +216,7 @@ socket.on('publish message', function(name) {
     messages = document.getElementById("messages");
     messages.appendChild(newPub);
     messages.insertBefore(newPub, clonedmessage);
+    if (document.hidden){changeTitle();}
 });
 
 socket.on('close message', function(name) {
