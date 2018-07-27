@@ -10,8 +10,7 @@
 <head>
     <title>Sync-Chat</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/style.css">
-    <!-- <link rel="stylesheet" href="style.css" type="text/css"> -->
+    <link rel="stylesheet" href="/style.css" type="text/css">
     <!-- Favicons~~~ Desu! -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png">
@@ -49,7 +48,7 @@ var roompath = '' + window.location.pathname;
 $(function() {
 
 var socket = io({transports: ['websocket'], upgrade: false});
-socket.emit('room declare', roompath);
+socket.emit('client entry', roompath);
 
 var update_count = 0;
 var is_open = 0;
@@ -161,22 +160,14 @@ socket.on('chat message', function(msg) {
 });
 
 socket.on('usercount', function(namelist) {
-    // Recieves an array of names from server and updates the "Users in room" line
     var htmlusers = document.getElementById("users");
-    htmlusers.innerHTML = 'Users in room: ';
-    newstring = "";
-    
-    for (i = 0; i < namelist.length-1; i++) {
-        newstring += namelist[i] + ", ";
-    }
-    newstring += namelist[namelist.length-1];
-    
-    textnode = document.createTextNode(newstring);
+    htmlusers.textContent = 'Users in room: ';
+    textnode = document.createTextNode(namelist);
     htmlusers.appendChild(textnode);
 });
+// Recieves a string from server, updates the "Users in room" line
 
 socket.on('new message', function(name) {
-    // Creates a generic message, taking in name. Should also publish message.
     if (document.getElementById("messages") !== null) {
         placement = document.getElementById("messages");
 
@@ -189,6 +180,7 @@ socket.on('new message', function(name) {
         placement.insertBefore(newMess, placement.children[0]);
     }
 });
+// Creates a ongoing chat message.
 
 socket.on('is typing', function(name){
    var status = document.createElement("li");
