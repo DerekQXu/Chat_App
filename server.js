@@ -1,13 +1,16 @@
 // Express, body parser.
 const express = require('express'),
       app = express(),
-      bodyParser = require('body-parser');      
+      bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/public/redirect.html');
 });
 app.get('/r/*', function(req, res) {
     res.sendFile(__dirname + '/public/index.html');
+});
+app.get('/users/register', function(req, res) {
+    res.sendFile(__dirname + '/public/register.html');
 });
 app.use(express.static('public'));
 
@@ -35,6 +38,10 @@ var chatSchema = mongoose.Schema({
         default: Date.now
     }
 });
+
+// get users
+let users = require('./routes/users');
+app.use('/users', users);
 
 var Chat = mongoose.model('Message', chatSchema);
 
@@ -68,7 +75,7 @@ function generate_name(){
 function names_in_room(room){
   usersinroom = _.filter(users, ['room', room]);
   namelist = _.map(usersinroom, 'name');
-  output  = "";  
+  output  = "";
   for (i = 0; i < namelist.length-1; i++) {
     output += namelist[i] + ", ";
   }
@@ -81,15 +88,15 @@ users = [];
 // Array will be filled with clients, one created per socket.
 
 io.on('connection', function(socket) {
-  
+
   var client = {
     'id': socket.id,
     'name': generate_name(),
     'room': "",
   }
-  
+
   users.push(client);
-  
+
   socket.on('client entry', function(room) {
       client.room = room;
       socket.join(room);
@@ -109,7 +116,7 @@ io.on('connection', function(socket) {
   socket.on('message eval', function(msg, toggle = 1) {
     msg = '' + msg; // using the evils of javascript for the power of good.
     msg = msg.trim(); // removing excess spaces from beggining and end
-    
+
     switch (true) {
     // Messages are only emitted if no commands were detected.
       default: if (msg !== "") {
