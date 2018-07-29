@@ -1,3 +1,5 @@
 # Chat_App
 in development
-To run: $npm run dev
+To run:
+$npm install
+$npm run dev
