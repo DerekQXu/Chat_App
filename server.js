@@ -11,6 +11,9 @@ app.get('/', function (req, res) {
 app.get('/r/*', function (req, res) {
 	res.sendFile(__dirname + '/public/index.html');
 });
+app.get('/users/register', function(req, res) {	
+  res.sendFile(__dirname + '/public/register.html');	
+});	
 app.use(express.static('public'));
 
 // mongodb part
