@@ -1,16 +1,16 @@
 <!doctype html>
+<html lang="en">
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
-<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 
-<html>
-
-  <head>
+<head>
     <title>Sync-Chat</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/style.css" type="text/css">
+    <meta name="description" content="A chatroom with live text.">     
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+    
     <!-- Favicons~~~ Desu! -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png">
@@ -21,49 +21,52 @@
     <meta name="msapplication-TileColor" content="#2d89ef">
     <meta name="msapplication-config" content="/icon/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="A chatroom with live text.">
-    <meta name="keywords" content="Chatroom,Chat">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
 
-  </head>
+<body>
+<form action="" id="send_message" onsubmit="return false;">
+  <button id="typetoggle" type="button">TogChamp</button>
+  <input id="m" autocomplete="off" />
+  <button id="sendbutts" type="button">Send</button>
+</form>
 
-  <body>
+<ul id="users">Users in room: </ul>
+<ul id="currenttype"> </ul>
+<ul id="messages"> </ul>
 
-    <form action="" id="send_message">
-      <input id="m" autocomplete="off" />
-      <button>Send</button>
-      <button id="typetoggle">Toggle</button>
-    </form>
+<script>
 
-    <ul id="users">Users in room: </ul>
-    <ul id="currenttype"></ul> 
-    <ul id="messages"> </ul>
+var path = window.location.pathname;
 
-    <script>
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runafterDOMload);
+} else {  // `DOMContentLoaded` already fired
+    runafterDOMload();
+}
 
-var roompath = '' + window.location.pathname;
-
-$(function() {
+function runafterDOMload(){
 
   var socket = io({transports: ['websocket'], upgrade: false});
-  socket.emit('client entry', roompath);
+  socket.emit('client entry', path);
 
   var update_count = 0;
   var is_open = 0;
   var live_type = 1;
 
   var sendform = document.getElementById("m");
+  var sendbutton = document.getElementById("send_message")
   var livetoggle = document.getElementById("typetoggle")
-    var title = document.title;
+  var title = document.title;
 
   function changeTitle(){
     update_count++;
     var newTitle = '(' + update_count +') ' + title;
-document.title = newTitle;
+    document.title = newTitle;
   }
-
+  // for tab title notifications
+  
   function newUpdate() {
-    update = setInterval(changeTitle, 2000);
+      update = setInterval(changeTitle, 2000);
   }
   document.onload = newUpdate;
 
@@ -82,141 +85,147 @@ document.title = newTitle;
   // Button press: Clears form, flips value of live_type.
 
   function enter_detect(e){
-    if (e.which == 13 || e.keyCode == 13) {
-      if(document.activeElement == sendform ){
+      if (e.which == 13 || e.keyCode == 13) {
+      if(document.activeElement == document.body){
+          sendform.focus();
+        }
+      else { if (document.activeElement == sendform){
+        if (live_type == 1){
+          socket.emit('update message', sendform.value);
+          socket.emit('message eval', sendform.value);    
+          is_open = 0;    
+        }
+        else{
+          socket.emit('message eval', sendform.value, 0);
+          is_open = 0;
+        }
+        socket.emit('close message');
+        sendform.value = '';
         sendform.blur();
+      }}
       }
-      else if(document.activeElement == document.body){
-        sendform.focus();
-      } 
+   }
+  // Selects form when enter pressed.
+  
+  function form_keyup(e){
+    if (is_open == 1 && live_type == 1){
+      socket.emit('update message', sendform.value);
     }
   }
-  // Deselects the form after send. Reselects form when pressed while unfocused.
 
   function form_focus(e){
     if (document.activeElement == sendform){
       if (is_open == 0){
         is_open = 1;
         if (live_type == 1){
-          socket.emit('open the message stop having it be closed');}
+        socket.emit('open the message stop having it be closed');}
         if (live_type == 0){
-          socket.emit('is typing');}
+        socket.emit('is typing');}
       }
     }
     else{
       if (is_open == 1 && sendform.value == ""){
-        is_open = 0;
-        socket.emit('close message');
+      is_open = 0;
+      socket.emit('close message');
       }
     }
   }
   // Opens a live-message if the form is focused, closes it if it's unfocused and empty.
 
   document.addEventListener( 'visibilitychange' , function() {
-    if (!document.hidden) {
-      document.title = title;
-      update_count = 0; 
-    }
+      if (!document.hidden) {
+          document.title = title;
+          update_count = 0; 
+      }
   }, false );
   // Resets the title and notification count when refocused.
 
   document.body.addEventListener('keyup', enter_detect, false);
-  sendform.addEventListener('keyup', enter_detect, false);
-  sendform.addEventListener("focus", form_focus, true);
-  sendform.addEventListener("blur", form_focus, true);
+  sendform.addEventListener('keyup', form_keyup, false);
+  sendform.addEventListener('focus', form_focus, true);
+  sendform.addEventListener('blur', form_focus, true);
+  sendbutton.addEventListener('submit', enter_detect, false)
   // Adding event listeners to enter-key and focus status.
 
-  $('#send_message').submit(function() {
-    if (live_type == 1){
-      socket.emit('update message', sendform.value);
-      socket.emit('message eval', sendform.value);    
-      is_open = 0;    
-    }
-    else{
-      socket.emit('message eval', sendform.value, 0);
-      is_open = 0;
-    }
-    socket.emit('close message');
-    sendform.value = ''; // Clears form.
-    return false;
-  });
-
-  $('#m').keyup(function() {
-    if (is_open == 1 && live_type == 1){
-      socket.emit('update message', sendform.value);
-    }
-    return false;
-  });
 
   socket.on('server message', function(msg) {
-    $('#messages').prepend($('<li>').css("color", "blue").text(msg));
+    placement = document.getElementById("messages");
+    let newMess = document.createElement("li");
+    newMess.id = name;
+    newMess.style.color = "blue";
+    newContent = document.createTextNode(msg);
+    newMess.appendChild(newContent);
+    placement.insertBefore(newMess, placement.children[0]);
   });
 
   socket.on('chat message', function(msg) {
-    $('#messages').prepend($('<li>').text(msg));
+    placement = document.getElementById("messages");
+    let newMess = document.createElement("li");
+    newMess.id = name;
+    newContent = document.createTextNode(msg);
+    newMess.appendChild(newContent);
+    placement.insertBefore(newMess, placement.children[0]);
+      
     if (document.hidden){changeTitle();}
   });
 
   socket.on('usercount', function(namelist) {
-    var htmlusers = document.getElementById("users");
-    htmlusers.textContent = 'Users in room: ';
-    textnode = document.createTextNode(namelist);
-    htmlusers.appendChild(textnode);
+      var htmlusers = document.getElementById("users");
+      htmlusers.textContent = 'Users in room: ';
+      textnode = document.createTextNode(namelist);
+      htmlusers.appendChild(textnode);
   });
   // Recieves a string from server, updates the "Users in room" line
 
   socket.on('new message', function(name) {
-    if (document.getElementById("messages") !== null) {
-      placement = document.getElementById("messages");
-
-      var newMess = document.createElement("li");
-      newMess.id = name;
-      newMess.style.color = "#696969";
-      newContent = document.createTextNode(name + ": ");
-      newMess.appendChild(newContent);
-
-      placement.insertBefore(newMess, placement.children[0]);
-    }
+    placement = document.getElementById("messages");
+    var newMess = document.createElement("li");
+    newMess.id = name;
+    newMess.style.color = "#696969";
+    newContent = document.createTextNode(name + ": ");
+    newMess.appendChild(newContent);
+    placement.insertBefore(newMess, placement.children[0]);
   });
   // Creates a ongoing chat message.
 
   socket.on('is typing', function(name){
-    var status = document.createElement("li");
-    status.id = name;
-    newContent = document.createTextNode(name + " is typing...");
-    status.appendChild(newContent);
-
-    whostyping = document.getElementById("currenttype");
-    whostyping.appendChild(status);
-
+     var status = document.createElement("li");
+     status.id = name;
+     newContent = document.createTextNode(name + " is typing...");
+     status.appendChild(newContent);
+     
+     whostyping = document.getElementById("currenttype");
+     whostyping.appendChild(status);
+     
   });
 
   socket.on('update message', function(msg, name) {
-    if (document.getElementById(name) !== null) {
-      var editmess = document.getElementById(name);
-      editmess.textContent = name + ": " + msg;
-    }
+      if (document.getElementById(name) !== null) {
+          var editmess = document.getElementById(name);
+          editmess.textContent = name + ": " + msg;
+      }
   });
 
   socket.on('publish message', function(name) {
-    var newPub = document.createElement("li");
-    var clonedmessage = document.getElementById(name);
-    newPub.textContent = clonedmessage.textContent;
-
-    messages = document.getElementById("messages");
-    messages.appendChild(newPub);
-    messages.insertBefore(newPub, clonedmessage);
-    if (document.hidden){changeTitle();}
+      var newPub = document.createElement("li");
+      var clonedmessage = document.getElementById(name);
+      newPub.textContent = clonedmessage.textContent;
+      
+      messages = document.getElementById("messages");
+      messages.appendChild(newPub);
+      messages.insertBefore(newPub, clonedmessage);
+      if (document.hidden){changeTitle();}
   });
 
   socket.on('close message', function(name) {
-    if (document.getElementById(name) !== null) {
-      document.getElementById(name).remove();
-    }
+      if (document.getElementById(name) !== null) {
+          document.getElementById(name).remove();
+      }
   });
 
-});
-    </script>
-  </body>
+};
+
+</script>
+</body>
 
 </html>
