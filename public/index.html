@@ -8,8 +8,7 @@
     <meta name="description" content="A chatroom with live text.">     
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/css/normalize.css">
-    <link rel="stylesheet" href="/css/style.css" type="text/css">
+    <link rel="stylesheet" href="/style.css" type="text/css">
     
     <!-- Favicons~~~ Desu! -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-touch-icon.png">
@@ -25,12 +24,13 @@
 
 <body>
 <form action="" id="send_message" onsubmit="return false;">
-  <button id="typetoggle" type="button">TogChamp</button>
+  <button id="typetoggle" type="button"></button>
   <input id="m" autocomplete="off" />
   <button id="sendbutts" type="button">Send</button>
 </form>
 
 <ul id="users">Users in room: </ul>
+<p></p> <!-- i just want a gap here. -->
 <ul id="currenttype"> </ul>
 <ul id="messages"> </ul>
 
@@ -64,20 +64,21 @@ function runafterDOMload(){
     document.title = newTitle;
   }
   // for tab title notifications
-  
-  function newUpdate() {
-      update = setInterval(changeTitle, 2000);
-  }
-  document.onload = newUpdate;
 
   livetoggle.onclick = function(){
+    if (is_open) 
+      socket.emit('close message');
+      is_open = 0;
     sendform.value = "";
+    
     switch(live_type){
       case 0:
         live_type = 1;
+        livetoggle.style.backgroundImage = "url('/greenbutton.png')";
         break;
       case 1:
         live_type = 0;
+        livetoggle.style.backgroundImage = "url('/redbutton.png')";
         break;
       default:
     }
@@ -217,7 +218,7 @@ function runafterDOMload(){
       if (document.hidden){changeTitle();}
   });
 
-  socket.on('close message', function(name) {
+  socket.on('close message', function(name, personal = 0) {
       if (document.getElementById(name) !== null) {
           document.getElementById(name).remove();
       }
