@@ -10,10 +10,18 @@
         font: 14px Helvetica, Arial;
         margin-right: auto;
         margin-left:  auto;
+
         max-width: 960px;
         padding-right: 10px;
-        padding-left:  10px;
+        padding-left: 10px;
+        line-height: 1.4;
     }
+    
+    li{
+    list-style-type: none;
+    }
+    
+
     
     form {
         background: #000;
@@ -41,11 +49,11 @@
       margin: 1px;
     }
     
-    form button#typetoggle{
+    form button#livetoggle{
       padding: 4px;
       width: 22px;
       height: 22px;
-      background-image: url("/greenbutton.png");
+      background-image: url("/png/greenbutton.png");
       background-repeat: no-repeat;
       background-size: cover;
     }
@@ -54,15 +62,13 @@
         list-style-type: none;
         margin: 0;
         padding-left: 4px;
-        align=left;
+        align: left;
     }
     
     #messages {
-        list-style-type: none;
-        color: #2B2B2B;
         margin: 0;
         padding-left: 4px;
-        align=left;
+        align: left;
         word-wrap: break-word;
     }
     
@@ -71,10 +77,60 @@
         margin: 0;
         padding: 4px;
         display: inline;
-        align=left;
+        align: left;
+        position: sticky;
+        top: 34px;
+    }    
+    
+    .fadein{
+      animation-name: fadein;
+      animation-duration: 1.5s;
     }
     
-    #users li:nth-child(odd) {
-        background: #eee;
+    @keyframes fadein{
+      from{color: #696969;}
+      to{color: #000000;}
     }
+
+    .slidein{
+      animation-name: slidein;
+      animation-duration: .5s;
+      overflow: hidden;
+    }
+    
+    @keyframes slidein{
+      from{
+        transform: translateY(-10px);
+        margin-bottom: -12px;
+        opacity:0;
+        }
+      to{
+        transform: translateY(0px);
+        margin-bottom: 0px;
+        opacity:1;
+        }
+    }
+    
+
+    .blipout{
+      animation-name: blipout;
+      animation-duration: .3s;
+      overflow: hidden;
+    }
+    
+    #keyframes blipout{
+      from{
+        transform: translateY(0px);
+        margin-bottom: 0px;
+        opacity:1;
+        }
+      to{
+        transform: translateY(-10px);
+        margin-bottom: -12px;
+        opacity:0;
+        }
+      
+    }
+    
+    
 </style>

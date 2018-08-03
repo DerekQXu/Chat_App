@@ -11,20 +11,14 @@
     <link rel="stylesheet" href="/style.css" type="text/css">
     
     <!-- Favicons~~~ Desu! -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icon/favicon-16x16.png">
-    <link rel="manifest" href="/icon/site.webmanifest">
-    <link rel="mask-icon" href="/icon/safari-pinned-tab.svg" color="#5bbad5">
     <link rel="shortcut icon" href="/icon/favicon.ico">
-    <meta name="msapplication-TileColor" content="#2d89ef">
-    <meta name="msapplication-config" content="/icon/browserconfig.xml">
-    <meta name="theme-color" content="#ffffff">
 </head>
 
 <body>
 <form action="" id="send_message" onsubmit="return false;">
-  <button id="typetoggle" type="button"></button>
+  <button id="livetoggle" type="button"></button>
   <input id="m" autocomplete="off" />
   <button id="sendbutts" type="button">Send</button>
 </form>
@@ -52,10 +46,11 @@ function runafterDOMload(){
   var update_count = 0;
   var is_open = 0;
   var live_type = 1;
+  var hastyped = '';
 
   var sendform = document.getElementById("m");
   var sendbutton = document.getElementById("send_message")
-  var livetoggle = document.getElementById("typetoggle")
+  var livetoggle = document.getElementById("livetoggle")
   var title = document.title;
 
   function changeTitle(){
@@ -74,11 +69,11 @@ function runafterDOMload(){
     switch(live_type){
       case 0:
         live_type = 1;
-        livetoggle.style.backgroundImage = "url('/greenbutton.png')";
+        livetoggle.style.backgroundImage = "url('/png/greenbutton.png')";
         break;
       case 1:
         live_type = 0;
-        livetoggle.style.backgroundImage = "url('/redbutton.png')";
+        livetoggle.style.backgroundImage = "url('/png/redbutton.png')";
         break;
       default:
     }
@@ -152,7 +147,6 @@ function runafterDOMload(){
   socket.on('server message', function(msg) {
     placement = document.getElementById("messages");
     let newMess = document.createElement("li");
-    newMess.id = name;
     newMess.style.color = "blue";
     newContent = document.createTextNode(msg);
     newMess.appendChild(newContent);
@@ -162,7 +156,7 @@ function runafterDOMload(){
   socket.on('chat message', function(msg) {
     placement = document.getElementById("messages");
     let newMess = document.createElement("li");
-    newMess.id = name;
+    newMess.classList.add("fadein");
     newContent = document.createTextNode(msg);
     newMess.appendChild(newContent);
     placement.insertBefore(newMess, placement.children[0]);
@@ -172,17 +166,16 @@ function runafterDOMload(){
 
   socket.on('usercount', function(namelist) {
       var htmlusers = document.getElementById("users");
-      htmlusers.textContent = 'Users in room: ';
-      textnode = document.createTextNode(namelist);
-      htmlusers.appendChild(textnode);
+      htmlusers.textContent = 'Users in room: '+namelist;
   });
-  // Recieves a string from server, updates the "Users in room" line
+  // Receives a string from server, updates the "Users in room" line
 
   socket.on('new message', function(name) {
     placement = document.getElementById("messages");
     var newMess = document.createElement("li");
-    newMess.id = name;
+    newMess.id = 'id:'+name;
     newMess.style.color = "#696969";
+    newMess.classList.add("slidein");
     newContent = document.createTextNode(name + ": ");
     newMess.appendChild(newContent);
     placement.insertBefore(newMess, placement.children[0]);
@@ -191,27 +184,37 @@ function runafterDOMload(){
 
   socket.on('is typing', function(name){
      var status = document.createElement("li");
-     status.id = name;
+     status.id = 'id:'+name;
+     status.style.color = "#696969";
+     status.classList.add("slidein");
      newContent = document.createTextNode(name + " is typing...");
      status.appendChild(newContent);
      
      whostyping = document.getElementById("currenttype");
      whostyping.appendChild(status);
      
+     if (hastyped !== ''){
+      clearTimeout(hastyped);
+     }
+     hastyped = setTimeout(typetimeout, 5000);
+     
+     function typetimeout(){
+      status.textContent = name + " has typed a message.";
+     }
   });
 
   socket.on('update message', function(msg, name) {
-      if (document.getElementById(name) !== null) {
-          var editmess = document.getElementById(name);
+      if (document.getElementById('id:'+name) !== null) {
+          var editmess = document.getElementById('id:'+name);
           editmess.textContent = name + ": " + msg;
       }
   });
 
   socket.on('publish message', function(name) {
       var newPub = document.createElement("li");
-      var clonedmessage = document.getElementById(name);
+      var clonedmessage = document.getElementById('id:'+name);
       newPub.textContent = clonedmessage.textContent;
-      
+      newPub.classList.add("fadein");
       messages = document.getElementById("messages");
       messages.appendChild(newPub);
       messages.insertBefore(newPub, clonedmessage);
@@ -219,9 +222,9 @@ function runafterDOMload(){
   });
 
   socket.on('close message', function(name, personal = 0) {
-      if (document.getElementById(name) !== null) {
-          document.getElementById(name).remove();
-      }
+      closedMess = document.getElementById('id:'+name);
+      if (closedMess !== null)
+        closedMess.remove(); 
   });
 
 };
