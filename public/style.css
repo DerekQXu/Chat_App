@@ -118,7 +118,7 @@
       overflow: hidden;
     }
     
-    #keyframes blipout{
+    @keyframes blipout{
       from{
         transform: translateY(0px);
         margin-bottom: 0px;

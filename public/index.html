@@ -19,7 +19,7 @@
 <body>
 <form action="" id="send_message" onsubmit="return false;">
   <button id="livetoggle" type="button"></button>
-  <input id="m" autocomplete="off" />
+  <input id="sendform" autocomplete="off" />
   <button id="sendbutts" type="button">Send</button>
 </form>
 
@@ -48,8 +48,8 @@ function runafterDOMload(){
   var live_type = 1;
   var hastyped = '';
 
-  var sendform = document.getElementById("m");
-  var sendbutton = document.getElementById("send_message")
+  var sendform = document.getElementById("sendform");
+  var sendbutton = document.getElementById("sendbutts")
   var livetoggle = document.getElementById("livetoggle")
   var title = document.title;
 
@@ -79,15 +79,15 @@ function runafterDOMload(){
     }
   };
   // Button press: Clears form, flips value of live_type.
-
+  
   function enter_detect(e){
-      if (e.which == 13 || e.keyCode == 13) {
-      if(document.activeElement == document.body){
+      if (e.which === 13 || e.keyCode === 13) {
+      if(document.activeElement === document.body){
           sendform.focus();
         }
       else { if (document.activeElement == sendform){
         if (live_type == 1){
-          socket.emit('update message', sendform.value);
+          socket.emit('update message', sendform.value, live_type);
           socket.emit('message eval', sendform.value);    
           is_open = 0;    
         }
@@ -104,23 +104,20 @@ function runafterDOMload(){
   // Selects form when enter pressed.
   
   function form_keyup(e){
-    if (is_open == 1 && live_type == 1){
-      socket.emit('update message', sendform.value);
+    if (is_open === 1){
+      socket.emit('update message', sendform.value, live_type);
     }
   }
 
   function form_focus(e){
-    if (document.activeElement == sendform){
-      if (is_open == 0){
+    if (document.activeElement === sendform){
+      if (is_open === 0){
         is_open = 1;
-        if (live_type == 1){
-        socket.emit('open the message stop having it be closed');}
-        if (live_type == 0){
-        socket.emit('is typing');}
+        socket.emit('open message', live_type)
       }
     }
     else{
-      if (is_open == 1 && sendform.value == ""){
+      if (is_open === 1 && sendform.value === ""){
       is_open = 0;
       socket.emit('close message');
       }
@@ -140,7 +137,7 @@ function runafterDOMload(){
   sendform.addEventListener('keyup', form_keyup, false);
   sendform.addEventListener('focus', form_focus, true);
   sendform.addEventListener('blur', form_focus, true);
-  sendbutton.addEventListener('submit', enter_detect, false)
+  sendbutton.addEventListener('click', enter_detect, false)
   // Adding event listeners to enter-key and focus status.
 
 
@@ -192,21 +189,26 @@ function runafterDOMload(){
      
      whostyping = document.getElementById("currenttype");
      whostyping.appendChild(status);
-     
-     if (hastyped !== ''){
-      clearTimeout(hastyped);
-     }
-     hastyped = setTimeout(typetimeout, 5000);
-     
-     function typetimeout(){
-      status.textContent = name + " has typed a message.";
-     }
   });
 
-  socket.on('update message', function(msg, name) {
-      if (document.getElementById('id:'+name) !== null) {
-          var editmess = document.getElementById('id:'+name);
-          editmess.textContent = name + ": " + msg;
+  socket.on('update message', function(msg, name, live_type) {
+      namedelement = document.getElementById('id:'+name);
+      if (live_type == 1){
+        if (namedelement !== null) {
+            namedelement.textContent = name + ": " + msg;
+        }      
+      }
+      
+      else{
+      
+        if (hastyped !== ''){
+          clearTimeout(hastyped);
+        }
+        namedelement.textContent = name + " is typing..."
+        hastyped = setTimeout(typetimeout, 4000);
+        function typetimeout(){
+          namedelement.textContent = name + " has typed a message.";
+        }
       }
   });
 
@@ -221,7 +223,7 @@ function runafterDOMload(){
       if (document.hidden){changeTitle();}
   });
 
-  socket.on('close message', function(name, personal = 0) {
+  socket.on('close message', function(name) {
       closedMess = document.getElementById('id:'+name);
       if (closedMess !== null)
         closedMess.remove(); 
