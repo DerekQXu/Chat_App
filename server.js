@@ -119,7 +119,9 @@ io.on('connection', function (socket) {
 
 	socket.on('message eval', function (msg, toggle = 1) {
 		msg = '' + msg; // using the evils of javascript for the power of good.
-		msg = msg.trim(); // removing excess spaces from beggining and end
+		msg = msg.trim(); // removing excess spaces
+    maxmsglength = 200;
+    msg = msg.substring(0,Math.min(maxmsglength, msg.length));
 
 		switch (true) {
 			// Messages are only emitted if no commands were detected.
@@ -132,7 +134,11 @@ io.on('connection', function (socket) {
 				}
 			}
 			break;
-
+    
+    case msg.substring(0, 5) == "/help":
+      io.in(client.room).emit('server message', "Really "+ client.name +"? You really need help? /name for changing names. /help for help. Enter to open the chat bar.")
+    break;
+    
 		case msg.substring(0, 5) == "/name":
 			var maxnamelength = 6 + 24;
 			var name = client.name;
@@ -164,24 +170,21 @@ io.on('connection', function (socket) {
 			break;
 		}
 	});
-
-	socket.on('update', function (msg) {
-		io.in(client.room).emit('update', name + ": " + msg);
+  
+	socket.on('update message', function (msg, live_type) {
+    io.in(client.room).emit('update message', msg, client.name, live_type);
 	});
-
-	socket.on('update message', function (msg) {
-		io.in(client.room).emit('update message', msg, client.name);
-	});
-
-	socket.on('open the message stop having it be closed', function () {
-		io.in(client.room).emit('new message', client.name);
-	});
-
+  
+  socket.on('open message', function(live_type){
+    if (live_type == 1)
+      io.in(client.room).emit('new message', client.name);
+    else
+      io.in(client.room).emit('is typing', client.name);
+  });
+  
 	socket.on('close message', function () {
 		io.in(client.room).emit('close message', client.name);
 	});
 
-	socket.on('is typing', function () {
-		io.in(client.room).emit('is typing', client.name);
-	});
+
 });
