@@ -90,6 +90,15 @@ function names_in_room(in_room) {
 users = [];
 // Array will be filled with clients, one created per socket.
 
+var createDiceCup = require('dicecup');
+var cup = createDiceCup();
+var cup = createDiceCup({
+		numberOfFacesOnLargestDie: 1000,
+		numberOfRollsLimit: 40
+	});
+
+var mexp = require('math-expression-evaluator');
+
 io.on('connection', function (socket) {
 
 	var client = {
@@ -103,10 +112,10 @@ io.on('connection', function (socket) {
 	socket.on('client entry', function (room) {
 		client.room = room;
 		socket.join(room);
-		console.log(client.name + 'has joined the room from: ' + client.room);
+		console.log(client.name + 'has joined the room: ' + client.room);
 		io.in(client.room).emit('server message', client.name + ' has joined the room.');
 		io.in(client.room).emit('usercount', names_in_room(client.room));
-    console.log(users);
+		console.log(users);
 	});
 
 	socket.on('disconnect', function () {
@@ -120,71 +129,145 @@ io.on('connection', function (socket) {
 	socket.on('message eval', function (msg, toggle = 1) {
 		msg = '' + msg; // using the evils of javascript for the power of good.
 		msg = msg.trim(); // removing excess spaces
-    maxmsglength = 200;
-    msg = msg.substring(0,Math.min(maxmsglength, msg.length));
+		maxmsglength = 200;
+		msg = msg.substring(0, Math.min(maxmsglength, msg.length));
 
-		switch (true) {
-			// Messages are only emitted if no commands were detected.
-		default:
+		function send_message() {
 			if (msg !== "") {
 				if (toggle == 0) {
-					io.in(client.room).emit('chat message', client.name + ": " + msg)
+					io.in(client.room).emit('chat message', client.name + ": " + msg);
 				} else {
+					io.in(client.room).emit('update message', msg, client.name, 1);
 					io.in(client.room).emit('publish message', client.name);
 				}
 			}
-			break;
-    
-    case msg.substring(0, 5) == "/help":
-      io.in(client.room).emit('server message', "Really "+ client.name +"? You really need help? /name for changing names. /help for help. Enter to open the chat bar.")
-    break;
-    
-		case msg.substring(0, 5) == "/name":
-			var maxnamelength = 6 + 24;
-			var name = client.name;
-			var new_name = msg.substring(6, Math.min(maxnamelength, msg.length)).trim();
-			if (_.findIndex(users, {
-					name: new_name
-				}) == -1 && new_name != "") {
-				client.name = new_name;
-			} else {
-				client.name = generate_name();
-			}
-			io.in(client.room).emit('server message', name + ' has changed name into ' + client.name);
-			io.in(client.room).emit('close message', name);
-			io.in(client.room).emit('usercount', names_in_room(client.room));
+		}
+
+		switch (true) {
+
+		default:
+			send_message();
 			break;
 
-		case msg.substring(0, 5) == "/save":
-			var newMsg = new Chat({
-					message: '' + msg
+		case msg.substring(0, 1) === "/":
+			switch (true) {
+			case msg.substring(0, 5) === "/flip":
+				msg = "(╯°□°）╯︵ ┻━┻";
+				send_message();
+				break;
+
+			case msg.substring(0, 7) === "/unflip":
+				msg = "┬─┬ ノ( ゜-゜ノ)";
+				send_message();
+				break;
+
+			case msg.substring(0, 6) === "/shrug":
+				msg = "¯\\_(ツ)_/¯ ";
+				send_message();
+				break;
+
+			case msg.substring(0, 3) == "/r ":
+				rollstring = msg.substring(3, msg.length);
+			case msg.substring(0, 6) == "/roll ":
+				if (typeof rollstring === 'undefined')
+					rollstring = msg.substring(6, msg.length);
+
+				try {
+					rollresult = cup.roll(rollstring);
+
+					var newstring = '';
+					for (i = 0; i < rollresult.length; i++) {
+						if (i > 0)
+							newstring += '|  '
+							newstring += '[' + rollresult[i]['rolls'] + '] '
+							if (rollresult[i]['rolls'].length > 1)
+								newstring += 'Sum: ' + rollresult[i]['total'] + '  ';
+					}
+
+					if (newstring.length > 135) {
+						newstring = newstring.substring(0, 135);
+						newstring += " ..."
+					}
+
+					io.in(client.room).emit('server message', newstring);
+					msg = rollstring;
+					send_message();
+
+				} catch (error) {
+					break;
+				}
+				break;
+
+			case msg.substring(0, 2) === "/?":
+			case msg.substring(0, 5) == "/help":
+				if (msg.substring(0, 10) === "/help math" || msg.substring(0, 7) === "/? math") {
+					io.in(client.room).emit('server message', "We all need help with math. See here: https://www.npmjs.com/package/math-expression-evaluator")
+					break;
+				}
+
+				io.in(client.room).emit('server message', "/roll <dice notation> for nerds and conflict resolution. Start messages with '=' to do math.")
+				io.in(client.room).emit('server message', "Really " + client.name + "? You really need help? /name for changing names. /help for help. Enter to open the chat bar.")
+
+				break;
+
+			case msg.substring(0, 5) == "/nick":
+			case msg.substring(0, 5) == "/name":
+				var maxnamelength = 6 + 24;
+				var name = client.name;
+				var new_name = msg.substring(6, Math.min(maxnamelength, msg.length)).trim();
+				if (_.findIndex(users, {
+						name: new_name
+					}) == -1 && new_name != "") {
+					client.name = new_name;
+				} else {
+					client.name = generate_name();
+				}
+				io.in(client.room).emit('server message', name + ' has changed name into ' + client.name);
+				io.in(client.room).emit('close message', name);
+				io.in(client.room).emit('usercount', names_in_room(client.room));
+				break;
+
+			case msg.substring(0, 5) == "/save":
+				var newMsg = new Chat({
+						message: '' + msg
+					});
+				console.log('saving newMsg: ' + newMsg)
+				newMsg.save(function (err) {
+					console.log('saved, err = ' + err);
+					if (err)
+						throw err;
+					console.log('echoing back data =' + msg);
+					io.sockets.emit('new message', msg);
 				});
-			console.log('saving newMsg: ' + newMsg)
-			newMsg.save(function (err) {
-				console.log('saved, err = ' + err);
-				if (err)
-					throw err;
-				console.log('echoing back data =' + msg);
-				io.sockets.emit('new message', msg);
-			});
+				break;
+
+			}
 			break;
+
+		case msg.substring(0, 1) == "=":
+			try {
+				var value = mexp.eval(msg.substring(1, msg.length));
+				msg = msg.substring(1, msg.length) + " = " + value;
+				send_message();
+			} catch (error) {}
+			break;
+
 		}
 	});
-  
+
 	socket.on('update message', function (msg, live_type) {
-    io.in(client.room).emit('update message', msg, client.name, live_type);
+		io.in(client.room).emit('update message', msg, client.name, live_type);
 	});
-  
-  socket.on('open message', function(live_type){
-    if (live_type == 1)
-      io.in(client.room).emit('new message', client.name);
-    else
-      io.in(client.room).emit('is typing', client.name);
-  });
-  
+
+	socket.on('open message', function (live_type) {
+		if (live_type == 1)
+			io.in(client.room).emit('new message', client.name);
+		else
+			io.in(client.room).emit('is typing', client.name);
+	});
+
 	socket.on('close message', function () {
 		io.in(client.room).emit('close message', client.name);
 	});
-
 
 });

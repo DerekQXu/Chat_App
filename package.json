@@ -12,8 +12,10 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
+    "dicecup": "^1.1.0",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
+    "math-expression-evaluator": "^1.2.17",
     "mongodb": "^3.1.1",
     "mongoose": "^5.2.5",
     "passport": "^0.4.0",
