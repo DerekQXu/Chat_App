@@ -7,14 +7,14 @@
     }
   
     body {
-        font: 14px Helvetica, Arial;
+        font: 14px Helvetica;
         margin-right: auto;
         margin-left:  auto;
 
         max-width: 960px;
         padding-right: 10px;
         padding-left: 10px;
-        line-height: 1.4;
+        line-height: 1.6;
     }
     
     li{
@@ -72,6 +72,10 @@
         word-wrap: break-word;
     }
     
+    #messages>li {
+      white-space : pre;
+    }
+    
     #users {
         list-style-type: none;
         margin: 0;
@@ -79,7 +83,7 @@
         display: inline;
         align: left;
         position: sticky;
-        top: 34px;
+        bottom: 12px;
     }    
     
     .fadein{
@@ -111,6 +115,9 @@
         }
     }
     
+    .nobreak{
+      display: inline;
+    }
 
     .blipout{
       animation-name: blipout;

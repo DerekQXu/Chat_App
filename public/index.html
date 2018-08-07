@@ -24,11 +24,10 @@
 </form>
 
 <ul id="users">Users in room: </ul>
-<p></p> <!-- i just want a gap here. -->
-<ul id="currenttype"> </ul>
 <ul id="messages"> </ul>
+<ul id="currenttype"> </ul>
 
-<script>
+<script>    
 
 var path = window.location.pathname;
 
@@ -141,10 +140,13 @@ function runafterDOMload(){
   // Adding event listeners to enter-key and focus status.
 
 
-  socket.on('server message', function(msg) {
+  socket.on('server message', function(msg, green = 0) {
     placement = document.getElementById("messages");
     let newMess = document.createElement("li");
     newMess.style.color = "blue";
+    if (green === 1){
+      newMess.style.color = "green";
+    }
     newContent = document.createTextNode(msg);
     newMess.appendChild(newContent);
     placement.insertBefore(newMess, placement.children[0]);
@@ -205,7 +207,7 @@ function runafterDOMload(){
           clearTimeout(hastyped);
         }
         namedelement.textContent = name + " is typing..."
-        hastyped = setTimeout(typetimeout, 4000);
+        hastyped = setTimeout(typetimeout, 3000);
         function typetimeout(){
           namedelement.textContent = name + " has typed a message.";
         }
