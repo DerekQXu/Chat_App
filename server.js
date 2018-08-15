@@ -73,6 +73,17 @@ function generate_name() {
 }
 // Creates a random pair of adjectives / animals that isn't currently used.
 
+var seedrandom = require('seedrandom');
+
+function generate_color(name){
+    var rng = seedrandom(name);
+    
+    var r = (Math.round(rng()* 127) + 127).toString(16);
+    var g = (Math.round(rng()* 127) + 127).toString(16);
+    var b = (Math.round(rng()* 127) + 127).toString(16);
+    return '#' + r + g + b;
+}
+
 function names_in_room(in_room) {
 	usersinroom = _.filter(users, ['room', in_room]);
 	// returns all objects in users in the same room as
@@ -91,12 +102,10 @@ users = [];
 // Array will be filled with clients, one created per socket.
 
 var createDiceCup = require('dicecup');
-var cup = createDiceCup();
 var cup = createDiceCup({
-		numberOfFacesOnLargestDie: 1000,
+		numberOfFacesOnLargestDie: 2000,
 		numberOfRollsLimit: 40
 	});
-
 var mexp = require('math-expression-evaluator');
 
 io.on('connection', function (socket) {
@@ -105,8 +114,10 @@ io.on('connection', function (socket) {
 		'id': socket.id,
 		'name': generate_name(),
 		'room': "",
+    'color': "",
 	}
-
+  
+  client.color = generate_color(client.name);
 	users.push(client);
 
 	socket.on('client entry', function (room) {
@@ -115,7 +126,6 @@ io.on('connection', function (socket) {
 		console.log(client.name + 'has joined the room: ' + client.room);
 		io.in(client.room).emit('server message', client.name + ' has joined the room.');
 		io.in(client.room).emit('usercount', names_in_room(client.room));
-		console.log(users);
 	});
 
 	socket.on('disconnect', function () {
@@ -135,7 +145,7 @@ io.on('connection', function (socket) {
 		function send_message() {
 			if (msg !== "") {
 				if (toggle == 0) {
-					io.in(client.room).emit('chat message', msg, client.name);
+					io.in(client.room).emit('chat message', msg, client.name, client.color);
 				} else {
 					io.in(client.room).emit('update message', msg, client.name, 1);
 					io.in(client.room).emit('publish message', client.name);
@@ -184,8 +194,8 @@ io.on('connection', function (socket) {
 								newstring += 'Sum: ' + rollresult[i]['total'] + '  ';
 					}
 
-					if (newstring.length > 135) {
-						newstring = newstring.substring(0, 135);
+					if (newstring.length > 160) {
+						newstring = newstring.substring(0, 160);
 						newstring += " ..."
 					}
 
@@ -219,8 +229,10 @@ io.on('connection', function (socket) {
 						name: new_name
 					}) == -1 && new_name != "") {
 					client.name = new_name;
+          client.color = generate_color(client.name)
 				} else {
 					client.name = generate_name();
+          client.color = generate_color(client.name)
 				}
 				io.in(client.room).emit('server message', name + ' has changed name into ' + client.name);
 				io.in(client.room).emit('close message', name);
@@ -256,12 +268,13 @@ io.on('connection', function (socket) {
 	});
 
 	socket.on('update message', function (msg, live_type) {
+    msg = msg.substring(0, Math.min(120, msg.length)).trim();
 		io.in(client.room).emit('update message', msg, client.name, live_type);
 	});
 
 	socket.on('open message', function (live_type) {
 		if (live_type == 1)
-			io.in(client.room).emit('new message', client.name);
+			io.in(client.room).emit('new message', client.name, client.color);
 		else
 			io.in(client.room).emit('is typing', client.name);
 	});
