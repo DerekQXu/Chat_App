@@ -72,8 +72,12 @@
         word-wrap: break-word;
     }
     
-    #messages>li {
-      white-space : pre;
+    #messages > div{
+      display: block;
+    }
+    
+    #messages > div > li{
+      display: inline;
     }
     
     #users {
@@ -83,8 +87,17 @@
         display: inline;
         align: left;
         position: sticky;
-        bottom: 12px;
+        top: 36px;
     }    
+    
+    .name{
+      font-weight: bold;
+      left: 0%;
+    }
+    
+    .content{
+      left: 30%;
+    }
     
     .fadein{
       animation-name: fadein;
@@ -97,6 +110,7 @@
     }
 
     .slidein{
+      color: #696969;
       animation-name: slidein;
       animation-duration: .5s;
       overflow: hidden;
