@@ -10,7 +10,8 @@
         font: 14px Helvetica;
         margin-right: auto;
         margin-left:  auto;
-
+        background-color: #191919;
+        color: #ffffff;
         max-width: 960px;
         padding-right: 10px;
         padding-left: 10px;
@@ -72,6 +73,10 @@
         word-wrap: break-word;
     }
     
+    #messages > li {
+      text-overflow: ellipsis;
+    }
+    
     #messages > div{
       display: block;
     }
@@ -106,7 +111,7 @@
     
     @keyframes fadein{
       from{color: #696969;}
-      to{color: #000000;}
+      to{color: #ffffff;}
     }
 
     .slidein{
