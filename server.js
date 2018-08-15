@@ -135,7 +135,7 @@ io.on('connection', function (socket) {
 		function send_message() {
 			if (msg !== "") {
 				if (toggle == 0) {
-					io.in(client.room).emit('chat message', client.name + ": " + msg);
+					io.in(client.room).emit('chat message', msg, client.name);
 				} else {
 					io.in(client.room).emit('update message', msg, client.name, 1);
 					io.in(client.room).emit('publish message', client.name);

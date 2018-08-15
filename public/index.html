@@ -24,8 +24,8 @@
 </form>
 
 <ul id="users">Users in room: </ul>
-<ul id="messages"> </ul>
 <ul id="currenttype"> </ul>
+<ul id="messages"> </ul>
 
 <script>    
 
@@ -77,7 +77,7 @@ function runafterDOMload(){
       default:
     }
   };
-  // Button press: Clears form, flips value of live_type.
+  // Button press: Clears form, flips value of live_type, changes button picture.
   
   function enter_detect(e){
       if (e.which === 13 || e.keyCode === 13) {
@@ -139,29 +139,40 @@ function runafterDOMload(){
   sendbutton.addEventListener('click', enter_detect, false)
   // Adding event listeners to enter-key and focus status.
 
-
-  socket.on('server message', function(msg, green = 0) {
+  
+  // I need an alternate server message that posts after the request for /rolls.
+  socket.on('server message', function(msg) {
     placement = document.getElementById("messages");
     let newMess = document.createElement("li");
     newMess.style.color = "blue";
-    if (green === 1){
-      newMess.style.color = "green";
-    }
     newContent = document.createTextNode(msg);
     newMess.appendChild(newContent);
     placement.insertBefore(newMess, placement.children[0]);
   });
 
-  socket.on('chat message', function(msg) {
+  socket.on('chat message', function(msg, name) {
     placement = document.getElementById("messages");
-    let newMess = document.createElement("li");
-    newMess.classList.add("fadein");
-    newContent = document.createTextNode(msg);
-    newMess.appendChild(newContent);
-    placement.insertBefore(newMess, placement.children[0]);
+    let newDiv = document.createElement("div"),
+      newName = document.createElement("li"),
+      newMess = document.createElement("li");     
+    
+    newDiv.classList.add("fadein");
+    
+    newMess.textContent = msg;
+    newMess.classList.add("content");
+    
+    newName.textContent = name + ":   ";
+    newName.classList.add("name");
+    
+    
+    newDiv.appendChild(newName);
+    newDiv.appendChild(newMess);
+    
+    placement.insertBefore(newDiv, placement.children[0]);
       
     if (document.hidden){changeTitle();}
   });
+  // Prints messages if live-typing is off. 
 
   socket.on('usercount', function(namelist) {
       var htmlusers = document.getElementById("users");
@@ -171,13 +182,25 @@ function runafterDOMload(){
 
   socket.on('new message', function(name) {
     placement = document.getElementById("messages");
-    var newMess = document.createElement("li");
-    newMess.id = 'id:'+name;
-    newMess.style.color = "#696969";
-    newMess.classList.add("slidein");
-    newContent = document.createTextNode(name + ": ");
-    newMess.appendChild(newContent);
-    placement.insertBefore(newMess, placement.children[0]);
+    let newDiv = document.createElement("div"),
+      newName = document.createElement("li"),
+      newMess = document.createElement("li");
+    
+    newDiv.id = 'id:'+name;
+    
+    newName.classList.add("name");
+    newMess.classList.add("content");
+    
+    //newDiv.style.color = "#696969";
+    newDiv.classList.add("slidein");
+    
+    newName.textContent = name + ": ";
+    newMess.textContent = "";
+    
+    newDiv.appendChild(newName);
+    newDiv.appendChild(newMess);
+    
+    placement.insertBefore(newDiv, placement.children[0]);
   });
   // Creates a ongoing chat message.
 
@@ -186,18 +209,21 @@ function runafterDOMload(){
      status.id = 'id:'+name;
      status.style.color = "#696969";
      status.classList.add("slidein");
-     newContent = document.createTextNode(name + " is typing...");
+     newContent = document.createTextNode(name + " is thinking...");
      status.appendChild(newContent);
      
      whostyping = document.getElementById("currenttype");
      whostyping.appendChild(status);
   });
 
-  socket.on('update message', function(msg, name, live_type) {
-      namedelement = document.getElementById('id:'+name);
+  socket.on('update message', function(msg = "", name, live_type) {
+      if (live_type === 1)
+        namedelement = document.getElementById('id:'+name).children[1];
+      else
+        namedelement = document.getElementById('id:'+name)
       if (live_type == 1){
         if (namedelement !== null) {
-            namedelement.textContent = name + ": " + msg;
+            namedelement.textContent = msg;
         }      
       }
       
@@ -205,7 +231,7 @@ function runafterDOMload(){
       
         if (hastyped !== ''){
           clearTimeout(hastyped);
-        }
+        } 
         namedelement.textContent = name + " is typing..."
         hastyped = setTimeout(typetimeout, 3000);
         function typetimeout(){
@@ -215,14 +241,17 @@ function runafterDOMload(){
   });
 
   socket.on('publish message', function(name) {
-      var newPub = document.createElement("li");
-      var clonedmessage = document.getElementById('id:'+name);
-      newPub.textContent = clonedmessage.textContent;
-      newPub.classList.add("fadein");
-      messages = document.getElementById("messages");
-      messages.appendChild(newPub);
-      messages.insertBefore(newPub, clonedmessage);
-      if (document.hidden){changeTitle();}
+    
+      var div = document.getElementById('id:' + name),
+      clone = div.cloneNode(true); // true means clone all childNodes and all event handlers
+      clone.id = "";
+      clone.classList.add("fadein");
+      clone.classList.remove("slidein")
+      
+      placement = document.getElementById("messages");
+      placement.insertBefore(clone, placement.children[0]);    
+      
+      if (document.hidden){changeTitle();} // If tabbed out, notification ping. 
   });
 
   socket.on('close message', function(name) {
