@@ -177,10 +177,10 @@ io.on('connection', function (socket) {
 				break;
       
       case msg.substring(0, 5) === "/spam":
-        msg = "testspamforCSStesting"
         for(i=0; i<50; i++){
-          send_message();
+          io.in(client.room).emit('server message', "traps aren't gay");
         }
+        break;
 
 			case msg.substring(0, 3) == "/r ":
 				rollstring = msg.substring(3, msg.length);
