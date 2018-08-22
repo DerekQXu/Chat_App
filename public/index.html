@@ -30,10 +30,10 @@
     
 </div>
 
-<ul id="users">Users in room: </ul>
-<form action="" id="send_message" onsubmit="return false;">
+<!-- <ul id="users">Users in room: </ul> -->
+ <form action="" id="send_message"  onsubmit="return false;">
   <button id="livetoggle" type="button"></button>
-  <input id="sendform" autocomplete="off" />
+  <input id="sendform" autocomplete="off" placeholder="Enter to start typing." />
   <button id="sendbutts" type="button">Send</button>
 </form>
 <script>    
@@ -67,13 +67,16 @@ function runafterDOMload(){
   }
   // for tab title notifications
   
-  var scrollDiv = document.getElementById("chatmessages");
+  var messageDiv = document.getElementById("chatmessages");
   
   function scrollToBottom(){
-    if (scrollDiv.scrolltop === scrollDiv.innerHeight)
-    scrollDiv.scrollTop = scrollDiv.scrollHeight;
+    let isScrolledToBottom = messageDiv.scrollHeight - messageDiv.clientHeight <= messageDiv.scrollTop + 30;
+    if (isScrolledToBottom){
+      var scroll_interval = setInterval(function(){messageDiv.scrollTop = messageDiv.scrollHeight;}, 25);
+      var scroll_timeout = setTimeout(function(){clearInterval(scroll_interval)}, 300);     
+    }
   }
-  // automatically scroll down if it's already at the bottom.
+  // automatically scroll down if it's already at the bottom. 
   
   livetoggle.onclick = function(){
     if (is_open) 
@@ -220,7 +223,8 @@ function runafterDOMload(){
     newDiv.appendChild(newName);
     newDiv.appendChild(newMess);
     
-    placement.appendChild(newDiv)
+    placement.appendChild(newDiv);
+    scrollToBottom();
   });
   // Creates a ongoing chat message.
 
@@ -263,15 +267,11 @@ function runafterDOMload(){
   });
 
   socket.on('publish message', function(name) {
-    
       var div = document.getElementById('id:' + name);
-      
       div.id = "";
       div.classList.add("fadein");
-      div.classList.remove("slidein")
-            
+      div.classList.remove("slidein")            
       if (document.hidden){changeTitle();} // If tabbed out, notification ping. 
-      scrollToBottom();
   });
   
   socket.on('close message', function(name, animation = 0) {
@@ -288,7 +288,7 @@ function runafterDOMload(){
           closedMess.id = ".";
           closedMess.classList.remove("slidein");
           closedMess.classList.add("blipout");
-          closetimeout = setTimeout(finalClose, 510);
+          closetimeout = setTimeout(finalClose, 305);
         }
         else{
           finalClose();
