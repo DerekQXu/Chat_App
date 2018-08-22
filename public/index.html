@@ -264,31 +264,31 @@ function runafterDOMload(){
 
   socket.on('publish message', function(name) {
     
-      var div = document.getElementById('id:' + name),
-      clone = div.cloneNode(true); // true means clone all childNodes and all event handlers
-      clone.id = "";
-      clone.classList.add("fadein");
-      clone.classList.remove("slidein")
+      var div = document.getElementById('id:' + name);
       
-      placement = document.getElementById("messages");
-      placement.insertBefore(clone, div);    
-      
+      div.id = "";
+      div.classList.add("fadein");
+      div.classList.remove("slidein")
+            
       if (document.hidden){changeTitle();} // If tabbed out, notification ping. 
       scrollToBottom();
   });
   
   socket.on('close message', function(name, animation = 0) {
       closedMess = document.getElementById('id:'+name);
-      function finalClose(){
-          closedMess.remove();
-      }
+      buggedmessage = document.getElementById(".");
       
-      if (closedMess !== null){  
+      if (closedMess !== null){
+        function finalClose(){
+          closedMess.remove();
+          if (buggedmessage !== null)
+          buggedmessage.remove();
+        }
         if (animation === 1){
-          closedMess.id = "soontodie";
+          closedMess.id = ".";
           closedMess.classList.remove("slidein");
           closedMess.classList.add("blipout");
-          closetimeout = setTimeout(finalClose(), 510);
+          closetimeout = setTimeout(finalClose, 510);
         }
         else{
           finalClose();
