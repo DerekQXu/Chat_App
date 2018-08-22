@@ -175,6 +175,12 @@ io.on('connection', function (socket) {
 				msg = "¯\\_(ツ)_/¯ ";
 				send_message();
 				break;
+      
+      case msg.substring(0, 5) === "/spam":
+        msg = "testspamforCSStesting"
+        for(i=0; i<50; i++){
+          send_message();
+        }
 
 			case msg.substring(0, 3) == "/r ":
 				rollstring = msg.substring(3, msg.length);
@@ -279,8 +285,8 @@ io.on('connection', function (socket) {
 			io.in(client.room).emit('is typing', client.name);
 	});
 
-	socket.on('close message', function () {
-		io.in(client.room).emit('close message', client.name);
+	socket.on('close message', function (animation=0) {
+		io.in(client.room).emit('close message', client.name,animation);
 	});
 
 });

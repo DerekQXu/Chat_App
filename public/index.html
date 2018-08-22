@@ -17,16 +17,25 @@
 </head>
 
 <body>
+
+<div id="chatbox">
+    <div id="chatmessages">
+      <ul id="messages"> </ul>
+      <ul id="currenttype"> </ul>
+    </div>
+    
+    
+    
+
+    
+</div>
+
+<ul id="users">Users in room: </ul>
 <form action="" id="send_message" onsubmit="return false;">
   <button id="livetoggle" type="button"></button>
   <input id="sendform" autocomplete="off" />
   <button id="sendbutts" type="button">Send</button>
 </form>
-
-<ul id="users">Users in room: </ul>
-<ul id="currenttype"> </ul>
-<ul id="messages"> </ul>
-
 <script>    
 
 var path = window.location.pathname;
@@ -38,7 +47,6 @@ if (document.readyState === "loading") {
 }
 
 function runafterDOMload(){
-
   var socket = io({transports: ['websocket'], upgrade: false});
   socket.emit('client entry', path);
 
@@ -58,10 +66,18 @@ function runafterDOMload(){
     document.title = newTitle;
   }
   // for tab title notifications
-
+  
+  var scrollDiv = document.getElementById("chatmessages");
+  
+  function scrollToBottom(){
+    if (scrollDiv.scrolltop === scrollDiv.innerHeight)
+    scrollDiv.scrollTop = scrollDiv.scrollHeight;
+  }
+  // automatically scroll down if it's already at the bottom.
+  
   livetoggle.onclick = function(){
     if (is_open) 
-      socket.emit('close message');
+      socket.emit('close message', 1);
       is_open = 0;
     sendform.value = "";
     
@@ -94,7 +110,10 @@ function runafterDOMload(){
           socket.emit('message eval', sendform.value, 0);
           is_open = 0;
         }
-        socket.emit('close message');
+        if (sendform.value === "")
+          socket.emit('close message', 1);
+        else
+          socket.emit('close message');
         sendform.value = '';
         sendform.blur();
       }}
@@ -118,7 +137,7 @@ function runafterDOMload(){
     else{
       if (is_open === 1 && sendform.value === ""){
       is_open = 0;
-      socket.emit('close message');
+      socket.emit('close message', 1);
       }
     }
   }
@@ -147,7 +166,8 @@ function runafterDOMload(){
     newMess.style.color = "##8b8bff";
     newContent = document.createTextNode(msg);
     newMess.appendChild(newContent);
-    placement.insertBefore(newMess, placement.children[0]);
+    placement.appendChild(newMess);
+    scrollToBottom();
   });
 
   socket.on('chat message', function(msg, name, color) {
@@ -159,7 +179,6 @@ function runafterDOMload(){
     newDiv.classList.add("fadein");
     
     newMess.textContent = msg;
-    newMess.classList.add("content");
     
     newName.textContent = name + ":   ";
     newName.style.color = color;
@@ -169,9 +188,10 @@ function runafterDOMload(){
     newDiv.appendChild(newName);
     newDiv.appendChild(newMess);
     
-    placement.insertBefore(newDiv, placement.children[0]);
-      
+    placement.appendChild(newDiv)
+    
     if (document.hidden){changeTitle();}
+    scrollToBottom();
   });
   // Prints messages if live-typing is off. 
 
@@ -192,9 +212,6 @@ function runafterDOMload(){
     newName.classList.add("name");
     newName.style.color = color;
     
-    newMess.classList.add("content");
-    
-    //newDiv.style.color = "#696969";
     newDiv.classList.add("slidein");
     
     newName.textContent = name + ": ";
@@ -203,21 +220,23 @@ function runafterDOMload(){
     newDiv.appendChild(newName);
     newDiv.appendChild(newMess);
     
-    placement.insertBefore(newDiv, placement.children[0]);
+    placement.appendChild(newDiv)
   });
   // Creates a ongoing chat message.
 
   socket.on('is typing', function(name){
      var status = document.createElement("li");
      status.id = 'id:'+name;
-     status.style.color = "#696969";
+     status.style.color = "#a5a5a5";
      status.classList.add("slidein");
      newContent = document.createTextNode(name + " is thinking...");
      status.appendChild(newContent);
      
      whostyping = document.getElementById("currenttype");
      whostyping.appendChild(status);
+     scrollToBottom();
   });
+  // Creates a ongoing hidden chat message.
 
   socket.on('update message', function(msg = "", name, live_type) {
       if (live_type === 1)
@@ -255,12 +274,26 @@ function runafterDOMload(){
       placement.insertBefore(clone, div);    
       
       if (document.hidden){changeTitle();} // If tabbed out, notification ping. 
+      scrollToBottom();
   });
-
-  socket.on('close message', function(name) {
+  
+  socket.on('close message', function(name, animation = 0) {
       closedMess = document.getElementById('id:'+name);
-      if (closedMess !== null)
-        closedMess.remove(); 
+      function finalClose(){
+          closedMess.remove();
+      }
+      
+      if (closedMess !== null){  
+        if (animation === 1){
+          closedMess.id = "soontodie";
+          closedMess.classList.remove("slidein");
+          closedMess.classList.add("blipout");
+          closetimeout = setTimeout(finalClose(), 510);
+        }
+        else{
+          finalClose();
+        }
+      }
   });
 
 };
