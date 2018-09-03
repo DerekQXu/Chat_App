@@ -63,6 +63,8 @@ var _ = require('lodash');
 var regexp = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
 // for link detection, eventually.
 
+var fs = require('fs'); // required for file serving TODO: change once database integrated
+
 http.listen(port, function () {
   console.log('listening on *:' + port);
 });
@@ -151,13 +153,18 @@ io.on('connection', function (socket) {
     maxmsglength = 200;
     msg = msg.substring(0, Math.min(maxmsglength, msg.length));
 
-    function send_message() {
+    function send_message(msg_type) {
       if (msg !== "") {
-        if (toggle == 0) {
-          io.in(client.room).emit('chat message', msg, client.name, client.color);
-        } else {
-          io.in(client.room).emit('update message', msg, client.name, 1);
-          io.in(client.room).emit('publish message', client.name);
+        if (msg_type == "txt"){
+          if (toggle == 0) {
+            io.in(client.room).emit('chat message', msg, client.name, client.color);
+          } else {
+            io.in(client.room).emit('update message', msg, client.name, 1);
+            io.in(client.room).emit('publish message', client.name);
+          }
+        }
+        else if (msg_type == "img"){
+          io.in(client.room).emit('image', msg, client.name, client.color);
         }
       }
     }
@@ -165,24 +172,36 @@ io.on('connection', function (socket) {
     switch (true) {
 
       default:
-        send_message();
+        send_message("txt");
         break;
+
+      case msg.substring(0, 1) === ":":
+        switch (true) {
+          case msg.substring(0, 7) === ":hawawa":
+            fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
+              if (err) {throw err;}
+              msg = buf.toString('base64');
+              send_message("img");
+              console.log("sending hawawa")
+            })
+            break;
+        }
 
       case msg.substring(0, 1) === "/":
         switch (true) {
           case msg.substring(0, 5) === "/flip":
             msg = "(╯°□°）╯︵ ┻━┻";
-            send_message();
+            send_message("txt");
             break;
 
           case msg.substring(0, 7) === "/unflip":
             msg = "┬─┬ ノ( ゜-゜ノ)";
-            send_message();
+            send_message("txt");
             break;
 
           case msg.substring(0, 6) === "/shrug":
             msg = "¯\\_(ツ)_/¯ ";
-            send_message();
+            send_message("txt");
             break;
 
           case msg.substring(0, 5) === "/spam":
@@ -216,7 +235,7 @@ io.on('connection', function (socket) {
 
               io.in(client.room).emit('server message', newstring);
               msg = rollstring;
-              send_message();
+              send_message("txt");
 
             } catch (error) {
               break;
@@ -275,7 +294,7 @@ io.on('connection', function (socket) {
         try {
           var value = mexp.eval(msg.substring(1, msg.length));
           msg = msg.substring(1, msg.length) + " = " + value;
-          send_message();
+          send_message("txt");
         } catch (error) {}
         break;
 

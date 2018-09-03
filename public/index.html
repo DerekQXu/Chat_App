@@ -296,6 +296,67 @@ function runafterDOMload(){
       }
   });
 
+  socket.on('image', function(msg, name, color) {
+    var img = new Image(80, 100);
+    img.src = 'data:image/jpeg;base64,' + msg;
+    var newMess_raw = document.createElement("img");
+    newMess_raw.setAttribute("src", img);
+
+    placement = document.getElementById("messages");
+    let newDiv = document.createElement("div"),
+      newName = document.createElement("li"),
+      newMess = document.createElement("li");     
+    
+    newDiv.classList.add("fadein");
+
+    newMess.textContent = "";
+    
+    newName.textContent = name + ":   ";
+    newName.style.color = color;
+    newName.classList.add("name");
+    
+    newDiv.appendChild(newName);
+    newDiv.appendChild(newMess);
+    newMess.appendChild(img);
+    
+    placement.appendChild(newDiv);
+    
+    if (document.hidden){changeTitle();}
+
+    scrollToBottom(); 
+  });
+/*
+    var img = new Image();
+    img.src = 'data:image/jpeg;base64,' + img;
+    var newMess_raw = document.createElement("img");
+    newMess_raw.setAttribute("src", "https://upload.wikimedia.org/wikipedia/commons/5/53/Loading_bar.gif");
+    newMess_raw.setAttribute("height", "");
+    newMess_raw.setAttribute("width", "");
+
+    placement = document.getElementById("messages");
+    let newDiv = document.createElement("div"),
+      newName = document.createElement("li"),
+      newMess = document.createElement("li");     
+    
+    newDiv.classList.add("fadein");
+
+    newMess.textContent = "dsaf";
+    
+    newName.textContent = name + ":   ";
+    newName.style.color = color;
+    newName.classList.add("name");
+    
+    newDiv.appendChild(newName);
+    newDiv.appendChild(newMess);
+    //newMess.appendChild(newMess_raw);
+    
+    placement.appendChild(newDiv);
+    
+    if (document.hidden){changeTitle();}
+
+    scrollToBottom();
+*/
+
 };
 
 </script>
