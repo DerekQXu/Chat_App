@@ -36,9 +36,9 @@ var stickerSchema = mongoose.Schema({
 });
 var Sticker = mongoose.model('Sticker', stickerSchema);
 
-function save_sticker(raw_img){
+function save_sticker(raw_name, raw_img){
   var newSticker = new Sticker({
-    name: "hawawa",
+    name: raw_name,
     image: raw_img
   });
   newSticker.save(function (err, newSticker) {
@@ -47,11 +47,16 @@ function save_sticker(raw_img){
   });
 }
 
-fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
-  if (err) {throw err;}
-  var cur_sticker = buf.toString('base64');
-  save_sticker(cur_sticker);
-})
+fs.readdir( __dirname + '/public/stickers/', function (err, file_names){
+  file_names.forEach(function (file_name){
+    fs.readFile( __dirname + '/public/stickers/' + file_name, function (err, buf){
+      if (err) {throw err;}
+      var cur_sticker = buf.toString('base64');
+      var cur_name = file_name.substring(0, file_name.length-4);
+      save_sticker(cur_name, cur_sticker);
+    })
+  })
+});
 
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -174,16 +179,14 @@ io.on('connection', function (socket) {
         break;
 
       case msg.substring(0, 1) === ":":
-        switch (true) {
-          case msg.substring(0, 7) === ":hawawa":
-            Sticker.findOne({ 'name':'hawawa' }, 'image', function(err, sticker) {
-              if (err) {throw err}
-              msg = sticker.image;
-              send_message("img");
-              console.log("sending hawawa");
-            });
-            break;
-        }
+        sticker_name = msg.substring(1, msg.length)
+        Sticker.findOne({ 'name':sticker_name }, 'image', function(err, sticker) {
+          if (err) {throw err}
+          msg = sticker.image;
+          send_message("img");
+          console.log("sending sticker");
+        });
+        break;
 
       case msg.substring(0, 1) === "/":
         switch (true) {
