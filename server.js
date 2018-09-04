@@ -23,35 +23,31 @@ mongo_username = encodeURIComponent('realsyncchat');
 mongo_password = process.env.PASSWORD;
 url = "mongodb://" + mongo_username + ":" + mongo_password + "@cluster0-shard-00-00-rkcea.mongodb.net:27017,cluster0-shard-00-01-rkcea.mongodb.net:27017,cluster0-shard-00-02-rkcea.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin&retryWrites=true";
 
-MongoClient.connect(url, { useNewUrlParser: true }, function(err, client){
-  if (err) {
-    console.error('Error: ' + err);
-  } else {
-    console.log('Connected to MongoDb')
-    var db = client.db('master_database');
-    var collection = db.collection('stickers');
-    collection.find({}).toArray(function(err, result){
-      if (err) {
-        console.log('Error grabbing stickers.');
-      } else if (result.length){
-        console.log('Stickers loaded.');
-      } else {
-        console.log('No stickers found.');
-      }
-    });
-  }
-});
+mongoose.connect(url, {useNewUrlParser: true});
 
-var chatSchema = mongoose.Schema({
-  message: String,
+
+var fs = require('fs'); // required for file serving TODO: change once database integrated
+var stickerSchema = mongoose.Schema({
+  name: String,
+  image: String,
   created: {
     type: Date,
     default:
     Date.now
   }
 });
+var Sticker = mongoose.model('Sticker', stickerSchema);
 
-var Chat = mongoose.model('Message', chatSchema);
+function save_sticker(raw_img){
+  var newSticker = new Sticker({
+    name: "hawawa",
+    image: raw_img
+  });
+  newSticker.save(function (err, newSticker) {
+    if (err) {throw err;}
+    console.log("Saved sticker image: " + newSticker.name);
+  });
+}
 
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -63,10 +59,13 @@ var _ = require('lodash');
 var regexp = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
 // for link detection, eventually.
 
-var fs = require('fs'); // required for file serving TODO: change once database integrated
-
 http.listen(port, function () {
   console.log('listening on *:' + port);
+  fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
+    if (err) {throw err;}
+    var cur_sticker = buf.toString('base64');
+    save_sticker(cur_sticker);
+  })
 });
 
 var adjectives = ["abandoned", "abnormal", "able", "average", "absurd", "acceptable", "adorable", "alcoholic", "angry", "attractive", "bad", "beautiful", "bitter", "bizarre", "bored", "brave", "busy", "calm", "careful", "caring", "cheerful", "clever", "clumsy", "creepy", "curious", "cute", "damaged", "depressed", "diligent", "dirty", "drunk", "easy", "elderly", "entertaining", "eager", "fast", "flaky", "fluffy", "forgetful", "fragile", "funny", "gaudy", "glib", "good", "greedy", "grumpy", "groovy", "healthy", "hungry", "high", "happy", "harmonious", "helpful", "icky", "illegal", "imaginary", "incredible", "intelligent", "jealous", "jobless", "juvenile", "jumpy", "kind", "lazy", "lethal", "lewd", "lively", "lonely", "loud", "lovely", "lying", "magical", "magnificent", "materialistic", "meek", "mellow", "mysterious", "naive", "naughty", "needy", "nervous", "normal", "nutty", "obedient", "obscene", "outrageous", "organic", "open", "peaceful", "perfect", "plastic", "powerful", "polite", "pumped", "quick", "quaint", "quirky", "rare", "rebel", "reflective", "remarkable", "responsible", "robust", "rude", "sad", "salty", "scandalous", "sacred", "serious", "shallow", "simple", "squeamish", "smart", "special", "spooky", "strange", "tacky", "talented", "tedious", "tense", "terrific", "thirsty", "troubled", "unbiased", "unusual", "upbeat", "unique", "unknown", "ultra", "wholesome", "wild", "witty", "woozy", "xenophobic", "young", "zesty", "zany"];
@@ -178,12 +177,12 @@ io.on('connection', function (socket) {
       case msg.substring(0, 1) === ":":
         switch (true) {
           case msg.substring(0, 7) === ":hawawa":
-            fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
-              if (err) {throw err;}
-              msg = buf.toString('base64');
+            Sticker.findOne({ 'name':'hawawa' }, 'image', function(err, sticker) {
+              if (err) {throw err}
+              msg = sticker.image;
               send_message("img");
-              console.log("sending hawawa")
-            })
+              console.log("sending hawawa");
+            });
             break;
         }
 
@@ -273,20 +272,6 @@ io.on('connection', function (socket) {
             io.in(client.room).emit('usercount', names_in_room(client.room));
             break;
 
-          case msg.substring(0, 5) == "/save":
-            var newMsg = new Chat({
-              message: '' + msg
-            });
-            console.log('saving newMsg: ' + newMsg)
-            newMsg.save(function (err) {
-              console.log('saved, err = ' + err);
-              if (err)
-                throw err;
-              console.log('echoing back data =' + msg);
-              io.sockets.emit('new message', msg);
-            });
-            break;
-
         }
         break;
 
@@ -322,15 +307,6 @@ io.on('connection', function (socket) {
 function exitHandler(exitCode) {
   console.log('\ncleanup initiated');
 
-  MongoClient.connect(url, function(err,db) {
-    if (err) throw err;
-    var dbo = db.db("mydb");
-    dbo.collection("customers").drop(function(err, delOK){
-      if (err) throw err;
-      if (delOK) console.log("Collection deleted");
-      db.close();
-    });
-  });
 
   console.log('cleanup finished');
   process.exit();
