@@ -24,8 +24,6 @@ mongo_password = process.env.PASSWORD;
 url = "mongodb://" + mongo_username + ":" + mongo_password + "@cluster0-shard-00-00-rkcea.mongodb.net:27017,cluster0-shard-00-01-rkcea.mongodb.net:27017,cluster0-shard-00-02-rkcea.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin&retryWrites=true";
 
 mongoose.connect(url, {useNewUrlParser: true});
-
-
 var fs = require('fs'); // required for file serving TODO: change once database integrated
 var stickerSchema = mongoose.Schema({
   name: String,
@@ -49,6 +47,12 @@ function save_sticker(raw_img){
   });
 }
 
+fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
+  if (err) {throw err;}
+  var cur_sticker = buf.toString('base64');
+  save_sticker(cur_sticker);
+})
+
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
@@ -61,11 +65,6 @@ var regexp = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{
 
 http.listen(port, function () {
   console.log('listening on *:' + port);
-  fs.readFile(__dirname + '/public/stickers/hawawa.png', function (err, buf){
-    if (err) {throw err;}
-    var cur_sticker = buf.toString('base64');
-    save_sticker(cur_sticker);
-  })
 });
 
 var adjectives = ["abandoned", "abnormal", "able", "average", "absurd", "acceptable", "adorable", "alcoholic", "angry", "attractive", "bad", "beautiful", "bitter", "bizarre", "bored", "brave", "busy", "calm", "careful", "caring", "cheerful", "clever", "clumsy", "creepy", "curious", "cute", "damaged", "depressed", "diligent", "dirty", "drunk", "easy", "elderly", "entertaining", "eager", "fast", "flaky", "fluffy", "forgetful", "fragile", "funny", "gaudy", "glib", "good", "greedy", "grumpy", "groovy", "healthy", "hungry", "high", "happy", "harmonious", "helpful", "icky", "illegal", "imaginary", "incredible", "intelligent", "jealous", "jobless", "juvenile", "jumpy", "kind", "lazy", "lethal", "lewd", "lively", "lonely", "loud", "lovely", "lying", "magical", "magnificent", "materialistic", "meek", "mellow", "mysterious", "naive", "naughty", "needy", "nervous", "normal", "nutty", "obedient", "obscene", "outrageous", "organic", "open", "peaceful", "perfect", "plastic", "powerful", "polite", "pumped", "quick", "quaint", "quirky", "rare", "rebel", "reflective", "remarkable", "responsible", "robust", "rude", "sad", "salty", "scandalous", "sacred", "serious", "shallow", "simple", "squeamish", "smart", "special", "spooky", "strange", "tacky", "talented", "tedious", "tense", "terrific", "thirsty", "troubled", "unbiased", "unusual", "upbeat", "unique", "unknown", "ultra", "wholesome", "wild", "witty", "woozy", "xenophobic", "young", "zesty", "zany"];
@@ -304,25 +303,23 @@ io.on('connection', function (socket) {
 
 });
 
-function exitHandler(exitCode) {
-  console.log('\ncleanup initiated');
+process.on('SIGINT', function(){
+  Sticker.remove({}, function(err) {
+    console.log('database cleared');
+    process.exit();
+  });
+});
 
-
-  console.log('cleanup finished');
-  process.exit();
-}
-
-//catches ctrl+c event
-process.on('SIGINT', exitHandler.bind({exit:true}));
+process.on('SIGUSR2', function(){
+  Sticker.remove({}, function(err) {
+    console.log('database cleared');
+    process.exit();
+  });
+});
 
 /*
 //do something when app is closing
 process.on('exit', exitHandler.bind(null,{cleanup:true}));
-
-// catches "kill pid" (for example: nodemon restart)
-process.on('SIGUSR1', exitHandler.bind(null, {exit:true}));
-process.on('SIGUSR2', exitHandler.bind(null, {exit:true}));
-
 //catches uncaught exceptions
 process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
 */
