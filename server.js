@@ -37,13 +37,23 @@ var stickerSchema = mongoose.Schema({
 var Sticker = mongoose.model('Sticker', stickerSchema);
 
 function save_sticker(raw_name, raw_img){
-  var newSticker = new Sticker({
+  var updtSticker = {
     name: raw_name,
     image: raw_img
-  });
-  newSticker.save(function (err, newSticker) {
+  };
+  var query = { name: raw_name };
+  Sticker.findOneAndUpdate(query, updtSticker, {upsert: true}, function (err, result_update) {
     if (err) {throw err;}
-    console.log("Saved sticker image: " + newSticker.name);
+    if (!result_update){
+      var newSticker = new Sticker(updtSticker)
+      newSticker.save(function(err, result_save){
+        if (err) {throw err;}
+        console.log("Saved sticker image: " + result_save.name);
+      });
+    }
+    else{
+      console.log("Updated sticker image: " + result_update.name);
+    }
   });
 }
 
@@ -313,12 +323,14 @@ process.on('SIGINT', function(){
   });
 });
 
+/*
 process.on('SIGUSR2', function(){
   Sticker.remove({}, function(err) {
     console.log('database cleared');
     process.exit();
   });
 });
+*/
 
 /*
 //do something when app is closing
