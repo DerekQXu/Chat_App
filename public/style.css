@@ -84,6 +84,7 @@
     
     #messages {
         margin: 0;
+        margin-top: 20px;
         padding-left: 4px;
         align: left;
         word-wrap: break-word;
@@ -109,7 +110,6 @@
         display: inline;
         align: left;
         position: sticky;
-        bottom: 30px;
     }    
     
     .name{
@@ -127,6 +127,17 @@
       to{color: #ffffff;}
     }
 
+    .horizontalreveal{
+      animation-name: horizontalreveal;
+      animation-duration: 1.5s;
+      color: #ffffff;
+    }
+    
+    @keyframes horizontalreveal{
+      from{clip-path: inset(0 100% 0 0); color: #a5a5a5}
+      to{clip-path: inset(0 0 0 0);}
+    } 
+    
     .slidein{
       color: #a5a5a5;
       animation-name: slidein;
@@ -136,7 +147,7 @@
     @keyframes slidein{
       from{
         margin-top: -22px;
-        opacity:0;
+        opacity:-1;
         }
       to{
         margin-top: 0px;
@@ -161,11 +172,12 @@
         }
       to{
         margin-top:-22px;
-        opacity:0;
+        opacity:-.3;
         }
       
     }
-
+    
+    
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

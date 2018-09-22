@@ -25,18 +25,63 @@
     </div>
     
     
-    
+    <ul id="users">Users in room: </ul>
 
     
 </div>
 
-<!-- <ul id="users">Users in room: </ul> -->
+
  <form action="" id="send_message"  onsubmit="return false;">
   <button id="livetoggle" type="button"></button>
-  <input id="sendform" autocomplete="off" placeholder="Enter to start typing." />
+  <input id="sendform" autocomplete="off" placeholder="Enter to start typing. /? for help." />
   <button id="sendbutts" type="button">Send</button>
 </form>
 <script>    
+
+function buildElement(obj) {
+  if (obj['tagName'] === 'text') {
+    return document.createTextNode(obj['text']);
+  } else {
+    // Create element
+    var parentNode = document.createElement(obj['tagName'].toUpperCase());
+    var index;
+    // Set attributes
+    for (index in obj) {
+      if (index !== 'tagName' && index !== 'text' && index !== 'children') {
+        parentNode.setAttribute(index, obj[index]);
+      }
+    }
+    // Add children
+    if ('children' in obj) {
+      for (index in obj['children']) {
+        parentNode.appendChild(buildElement(obj['children'][index]));
+      }
+    } else if ('text' in obj) {
+      parentNode.appendChild(document.createTextNode(obj['text']));
+    }
+    return parentNode;
+  }
+}
+// some builder function i should get to using, since I don't wanna bother getting a helper function for inner.html
+
+
+function insertTextAtCursor(el, text) {
+    var val = el.value, endIndex, range, doc = el.ownerDocument;
+    if (typeof el.selectionStart == "number"
+            && typeof el.selectionEnd == "number") {
+        endIndex = el.selectionEnd;
+        el.value = val.slice(0, endIndex) + text + val.slice(endIndex);
+        el.selectionStart = el.selectionEnd = endIndex + text.length;
+    } else if (doc.selection != "undefined" && doc.selection.createRange) {
+        el.focus();
+        range = doc.selection.createRange();
+        range.collapse(false);
+        range.text = text;
+        range.select();
+    }
+}
+
+
 
 var path = window.location.pathname;
 
@@ -68,7 +113,6 @@ function runafterDOMload(){
   // for tab title notifications
   
   var messageDiv = document.getElementById("chatmessages");
-  
   function scrollToBottom(){
     let isScrolledToBottom = messageDiv.scrollHeight - messageDiv.clientHeight <= messageDiv.scrollTop + 30;
     if (isScrolledToBottom){
@@ -121,6 +165,7 @@ function runafterDOMload(){
         sendform.blur();
       }}
       }
+      
    }
   // Selects form when enter pressed.
   
@@ -179,7 +224,10 @@ function runafterDOMload(){
       newName = document.createElement("li"),
       newMess = document.createElement("li");     
     
-    newDiv.classList.add("fadein");
+    newMess.classList.add("fadein")
+    newMess.classList.add("horizontalreveal");
+    let duration = msg.length * .05 + "s" 
+    newMess.style.animationDuration = duration;
     
     newMess.textContent = msg;
     
@@ -228,10 +276,10 @@ function runafterDOMload(){
   });
   // Creates a ongoing chat message.
 
-  socket.on('is typing', function(name){
+  socket.on('is typing', function(name, color){
      var status = document.createElement("li");
      status.id = 'id:'+name;
-     status.style.color = "#a5a5a5";
+     status.style.color = color;
      status.classList.add("slidein");
      newContent = document.createTextNode(name + " is thinking...");
      status.appendChild(newContent);
@@ -288,74 +336,13 @@ function runafterDOMload(){
           closedMess.id = ".";
           closedMess.classList.remove("slidein");
           closedMess.classList.add("blipout");
-          closetimeout = setTimeout(finalClose, 305);
+          closetimeout = setTimeout(finalClose, 290);
         }
         else{
           finalClose();
         }
       }
   });
-
-  socket.on('image', function(msg, name, color) {
-    var img = new Image(80, 100);
-    img.src = 'data:image/jpeg;base64,' + msg;
-    var newMess_raw = document.createElement("img");
-    newMess_raw.setAttribute("src", img);
-
-    placement = document.getElementById("messages");
-    let newDiv = document.createElement("div"),
-      newName = document.createElement("li"),
-      newMess = document.createElement("li");     
-    
-    newDiv.classList.add("fadein");
-
-    newMess.textContent = "";
-    
-    newName.textContent = name + ":   ";
-    newName.style.color = color;
-    newName.classList.add("name");
-    
-    newDiv.appendChild(newName);
-    newDiv.appendChild(newMess);
-    newMess.appendChild(img);
-    
-    placement.appendChild(newDiv);
-    
-    if (document.hidden){changeTitle();}
-
-    scrollToBottom(); 
-  });
-/*
-    var img = new Image();
-    img.src = 'data:image/jpeg;base64,' + img;
-    var newMess_raw = document.createElement("img");
-    newMess_raw.setAttribute("src", "https://upload.wikimedia.org/wikipedia/commons/5/53/Loading_bar.gif");
-    newMess_raw.setAttribute("height", "");
-    newMess_raw.setAttribute("width", "");
-
-    placement = document.getElementById("messages");
-    let newDiv = document.createElement("div"),
-      newName = document.createElement("li"),
-      newMess = document.createElement("li");     
-    
-    newDiv.classList.add("fadein");
-
-    newMess.textContent = "dsaf";
-    
-    newName.textContent = name + ":   ";
-    newName.style.color = color;
-    newName.classList.add("name");
-    
-    newDiv.appendChild(newName);
-    newDiv.appendChild(newMess);
-    //newMess.appendChild(newMess_raw);
-    
-    placement.appendChild(newDiv);
-    
-    if (document.hidden){changeTitle();}
-
-    scrollToBottom();
-*/
 
 };
 
