@@ -1,5 +1,7 @@
 # Chat_App
-in development
+
+This project is no longer in development.
+The updated version can be found here: https://github.com/sentient-ai?tab=repositories
 
 When you type, other people can see what you can type.
 Can also do math and roll dice. That's it so far.
